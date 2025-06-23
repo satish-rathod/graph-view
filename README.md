@@ -1,4 +1,4 @@
-# 🧠 Graph Visualizer & Algorithm Simulator (React + Cytoscape.js)
+# CS Academy Graph Editor - Interactive Graph Visualization Tool
 
 An interactive, modern graph visualization tool built with **React** and **Cytoscape.js**, featuring support for directed/undirected and weighted/unweighted graphs. Users can create, edit, and simulate classic graph algorithms like **DFS, BFS, Dijkstra’s, and Topological Sort**.
 
