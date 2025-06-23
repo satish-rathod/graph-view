@@ -1,162 +1,290 @@
 # CS Academy Graph Editor - Interactive Graph Visualization Tool
 
-An interactive, modern graph visualization tool built with **React** and **Cytoscape.js**, featuring support for directed/undirected and weighted/unweighted graphs. Users can create, edit, and simulate classic graph algorithms like **DFS, BFS, Dijkstra’s, and Topological Sort**.
+A pixel-perfect replica of the CS Academy Graph Editor with full interactive functionality for graph visualization, editing, and analysis. Built with React and D3.js for educational purposes and competitive programming practice.
 
-Designed with a sleek interface using **shadcn/ui components** and deployed on **Vercel** for instant access.
+![CS Academy Graph Editor](https://img.shields.io/badge/Status-Complete-brightgreen)
+![React](https://img.shields.io/badge/React-18.2.0-blue)
+![D3.js](https://img.shields.io/badge/D3.js-7.8.5-orange)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.3.2-blueviolet)
 
----
+## 🎯 **Features**
 
-## 🌐 Live Demo
+### **Interactive Graph Visualization**
+- ✅ **Drag & Drop Nodes** - Move nodes around the canvas with smooth interactions
+- ✅ **Real-time Rendering** - Graph updates instantly as you modify input data
+- ✅ **Zoom & Pan** - Navigate large graphs with mouse wheel and drag
+- ✅ **Node Selection** - Click nodes to select and highlight them
 
-[👉 Click here to try it (Vercel Link)](https://your-vercel-url.vercel.app) *(Add after deployment)*
+### **Graph Modes**
+- ✅ **Undirected Graphs** - Standard graph visualization
+- ✅ **Directed Graphs** - Arrows show edge direction
+- ✅ **Tree Mode** - Specialized tree visualization
+- ✅ **Component Analysis** - Highlight connected components
 
----
+### **Professional Input System**
+- ✅ **ACE Code Editor** - Professional code editor with syntax highlighting
+- ✅ **Edge List Format** - Support for `u v [weight]` format
+- ✅ **Real-time Parsing** - Graph updates as you type
+- ✅ **Line Numbers** - Easy navigation through large datasets
 
-## 🧱 Tech Stack
+### **Layout & Visualization**
+- ✅ **Auto Layout Generation** - Automatic graph positioning
+- ✅ **Custom Positioning** - Manual node placement
+- ✅ **Responsive Design** - Works on different screen sizes
+- ✅ **Professional UI** - Clean, modern interface
 
-| Tool/Library     | Purpose                              |
-|------------------|--------------------------------------|
-| React            | App framework                        |
-| Cytoscape.js     | Graph rendering and interaction      |
-| shadcn/ui        | Beautiful prebuilt UI components     |
-| TailwindCSS      | Utility-first styling framework      |
-| Vercel           | Hosting & deployment                 |
-| TypeScript (opt) | Type safety (optional but recommended) |
+## 🚀 **Quick Start**
 
----
+### **Prerequisites**
+- **Node.js** (v16.0.0 or higher)
+- **npm** or **yarn** package manager
+- Modern web browser
 
-## ✨ Features
+### **Installation**
 
-### 🔧 Graph Editor
-- Add and delete **nodes**
-- Add and delete **edges**
-- Toggle:
-  - Directed / Undirected mode
-  - Weighted / Unweighted mode
-- Input edge weights manually
-- Drag nodes freely (auto-layout support)
-- Fix/unfix node positions
-- Zoom & pan canvas
-- Adjacency list display
+1. **Clone the Repository**
+   ```bash
+   git clone <repository-url>
+   cd cs-academy-graph-editor
+   ```
 
-### 📊 Algorithms (Visual Simulation)
-- ✅ Depth First Search (DFS)
-- ✅ Breadth First Search (BFS)
-- ✅ Dijkstra’s Shortest Path
-- ✅ Topological Sort (for DAGs)
+2. **Install Dependencies**
+   ```bash
+   cd frontend
+   yarn install
+   # or
+   npm install
+   ```
 
-Visual indicators:
-- Highlighted traversal
-- Step-by-step animation
-- Optionally show visited order, distance updates
+3. **Start the Development Server**
+   ```bash
+   yarn start
+   # or
+   npm start
+   ```
 
-### 🎛️ UI Components
-- Clean control panel using shadcn/ui
-- Toggle buttons for graph types
-- Select dropdowns for algorithm inputs
-- Toasts/alerts for errors (e.g., “Graph contains cycle”)
-- Dark/light mode
+4. **Open in Browser**
+   Navigate to `http://localhost:3000`
 
----
-
-## 🗂️ Folder Structure
-
-src/
-├── components/
-│ ├── GraphCanvas.tsx # Cytoscape graph canvas
-│ ├── ControlsPanel.tsx # Graph type + algorithm controls
-│ ├── NodeEdgeManager.tsx # Add/Delete nodes/edges
-│ ├── AlgorithmRunner.tsx # Start/stop algorithm simulations
-├── lib/
-│ ├── algorithms/
-│ │ ├── bfs.ts
-│ │ ├── dfs.ts
-│ │ ├── dijkstra.ts
-│ │ └── topoSort.ts
-│ └── graphUtils.ts # Adjacency list, weight handlers
-├── App.tsx
-├── main.tsx
-└── index.css
-
-yaml
-Copy
-Edit
-
----
-
-## 🛠️ Getting Started
-
+### **Production Build**
 ```bash
-# 1. Clone the repo
-git clone https://github.com/your-username/graph-visualizer.git
-cd graph-visualizer
+yarn build
+# or
+npm run build
+```
 
-# 2. Install dependencies
-npm install
+## 📖 **How to Use**
 
-# 3. Start the development server
-npm run dev
-🚀 Deployment (Vercel)
-Push to a GitHub repo
+### **1. Input Graph Data**
+In the left panel, enter your graph data using edge list format:
+```
+1 2
+1 3
+2 4
+3 4
+4 5
+2 5
+```
 
-Go to vercel.com
+### **2. Choose Graph Mode**
+- Click **"Undirected"** for standard graphs
+- Click **"Directed"** for directed graphs with arrows
+- Toggle **"Tree mode"** for tree structures
 
-Import your repo and follow setup
+### **3. Interact with the Graph**
+- **Drag nodes** to reposition them
+- **Click nodes** to select/deselect
+- **Scroll** to zoom in/out
+- **Drag background** to pan around
 
-Set framework as React and root directory if needed
+### **4. Generate Layouts**
+- Click **"Generate Layout"** to automatically position nodes
+- Use the layout algorithm for better visualization
 
-Click Deploy
+### **5. Advanced Features**
+- Toggle **"Show components"** to highlight connected components
+- Switch between **Editor**, **Costs**, and **Custom Colors** tabs
+- Use the help panel for additional guidance
 
-🧪 Development Plan
-Week 1: Base Setup
-Scaffold project
+## 🏗️ **Project Structure**
 
-Setup Cytoscape canvas
+```
+cs-academy-graph-editor/
+├── frontend/
+│   ├── public/
+│   │   └── index.html
+│   ├── src/
+│   │   ├── App.js              # Main application component
+│   │   ├── App.css             # Application styles
+│   │   ├── index.js            # Entry point
+│   │   ├── index.css           # Global styles
+│   │   └── components.js       # All React components
+│   ├── package.json            # Dependencies and scripts
+│   ├── tailwind.config.js      # Tailwind configuration
+│   └── postcss.config.js       # PostCSS configuration
+├── .gitignore                  # Git ignore rules
+└── README.md                   # This file
+```
 
-Add shadcn/ui components
+## 🛠️ **Technologies Used**
 
-Week 2: Graph Creation Tools
-Node/Edge creation & deletion
+### **Frontend Framework**
+- **React 18.2.0** - Modern React with hooks
+- **JavaScript ES6+** - Modern JavaScript features
 
-Graph type toggles
+### **Visualization**
+- **D3.js 7.8.5** - Powerful data visualization library
+- **SVG** - Scalable vector graphics for crisp rendering
 
-Edge weight input
+### **Styling**
+- **TailwindCSS 3.3.2** - Utility-first CSS framework
+- **Inter Font** - Professional typography
+- **Custom CSS** - Specialized graph styling
 
-Week 3: Algorithm Logic
-Implement DFS & BFS
+### **Code Editor**
+- **ACE Editor** - Professional code editor
+- **React-ACE** - React integration for ACE
 
-Add Dijkstra with weight handling
+### **Development Tools**
+- **Create React App** - Development environment
+- **PostCSS** - CSS processing
+- **Autoprefixer** - CSS vendor prefixes
 
-Add Topological Sort (detect cycles)
+## 📝 **Input Format**
 
-Week 4: Visual Polish & UX
-Step-by-step mode
+### **Basic Edge List**
+```
+1 2
+1 3
+2 4
+3 4
+```
 
-UI polish (toasts, tooltips)
+### **Weighted Edges**
+```
+1 2 5.5
+1 3 2.0
+2 4 1.5
+3 4 3.0
+```
 
-Export to PNG
+### **Complex Graphs**
+```
+1 2 10
+1 3 15
+2 4 20
+2 5 25
+3 6 30
+4 7 35
+5 7 40
+6 7 45
+```
 
-Dark/light toggle
+## 🎨 **Customization**
 
-Final testing + Vercel deploy
+### **Colors**
+Modify the color scheme in `tailwind.config.js`:
+```javascript
+colors: {
+  'cs-blue': '#4A90E2',
+  'cs-light-blue': '#E8F4FD',
+  'cs-gray': '#F8F9FA',
+  // Add your custom colors
+}
+```
 
-🔮 Future Improvements
-Add more algorithms: Kruskal, Prim, SCC
+### **Graph Styling**
+Update graph appearance in `index.css`:
+```css
+.graph-node {
+  /* Node styling */
+}
 
-Save/load graphs using localStorage
+.graph-edge {
+  /* Edge styling */
+}
+```
 
-JSON import/export
+## 🔧 **Available Scripts**
 
-Group nodes by tags or layers
+In the `frontend` directory:
 
-Mobile responsive UI
+- **`yarn start`** - Start development server
+- **`yarn build`** - Create production build
+- **`yarn test`** - Run test suite
+- **`yarn eject`** - Eject from Create React App
 
-📜 License
-MIT License – free to use, remix, and build on.
+## 🌟 **Key Features Comparison**
 
-🙌 Acknowledgments
-Cytoscape.js
+| Feature | Original CS Academy | This Replica |
+|---------|-------------------|--------------|
+| Interactive Nodes | ✅ | ✅ |
+| Drag & Drop | ✅ | ✅ |
+| Directed/Undirected | ✅ | ✅ |
+| ACE Editor | ✅ | ✅ |
+| Auto Layout | ✅ | ✅ |
+| Zoom & Pan | ✅ | ✅ |
+| Professional UI | ✅ | ✅ |
+| Real-time Updates | ✅ | ✅ |
 
-shadcn/ui
+## 🐛 **Troubleshooting**
 
-React
+### **Common Issues**
+
+1. **Port Already in Use**
+   ```bash
+   # Kill process on port 3000
+   lsof -ti:3000 | xargs kill -9
+   ```
+
+2. **Dependencies Not Installing**
+   ```bash
+   # Clear cache and reinstall
+   yarn cache clean
+   rm -rf node_modules
+   yarn install
+   ```
+
+3. **Build Errors**
+   ```bash
+   # Check Node.js version
+   node --version
+   # Should be v16.0.0 or higher
+   ```
+
+### **Performance Tips**
+- Use Chrome DevTools for debugging
+- Limit graph size for better performance (< 1000 nodes)
+- Close other browser tabs when working with large graphs
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 **Acknowledgments**
+
+- **CS Academy** - Original graph editor inspiration
+- **D3.js Community** - Powerful visualization library
+- **React Team** - Excellent frontend framework
+- **TailwindCSS** - Beautiful utility-first CSS
+
+## 📞 **Support**
+
+If you encounter any issues or have questions:
+1. Check the troubleshooting section above
+2. Open an issue on GitHub
+3. Review the documentation
+
+---
+
+**Made with ❤️ for the competitive programming and graph theory community**
+
+*Happy Graph Visualization! 🎯*
