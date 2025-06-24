@@ -225,40 +225,65 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
     const dragBehavior = d3.drag()
       .on('start', function(event, d) {
         if (!event.active) simulation.alphaTarget(0.3).restart();
+        
+        // Store the initial position relative to the node
+        const [mouseX, mouseY] = d3.pointer(event, svg.node());
+        const transform = d3.zoomTransform(svg.node());
+        const [worldX, worldY] = transform.invert([mouseX, mouseY]);
+        
         d.fx = d.x;
         d.fy = d.y;
+        
+        // Store offset for smooth dragging
+        d.__dragOffsetX = worldX - d.x;
+        d.__dragOffsetY = worldY - d.y;
+        
         setSelectedNode(d.id);
         setIsSimulationRunning(true);
         
         // Visual feedback
         d3.select(this).select('circle')
           .attr('stroke-width', 4)
-          .attr('stroke', '#4A90E2');
+          .attr('stroke', '#4A90E2')
+          .attr('r', 25);
       })
       .on('drag', function(event, d) {
-        // Get the current transform
+        // Get mouse position relative to SVG
+        const [mouseX, mouseY] = d3.pointer(event, svg.node());
         const transform = d3.zoomTransform(svg.node());
+        const [worldX, worldY] = transform.invert([mouseX, mouseY]);
         
-        // Apply inverse transform to get correct coordinates
-        const [x, y] = transform.invert([event.x, event.y]);
+        // Apply the drag offset to maintain smooth movement
+        d.fx = worldX - d.__dragOffsetX;
+        d.fy = worldY - d.__dragOffsetY;
         
-        d.fx = x;
-        d.fy = y;
+        // Restart simulation with low alpha to update immediately
+        simulation.alpha(0.1).restart();
       })
       .on('end', function(event, d) {
         if (!event.active) simulation.alphaTarget(0.1);
+        
+        // Clean up
+        delete d.__dragOffsetX;
+        delete d.__dragOffsetY;
+        
+        // Release fixed position but keep current position
+        const finalX = d.x;
+        const finalY = d.y;
         d.fx = null;
         d.fy = null;
+        
         setIsSimulationRunning(false);
         
         // Update parent component with new position
-        onNodeMove(d.id, d.x, d.y);
+        onNodeMove(d.id, finalX, finalY);
         
         // Reset visual feedback
         if (selectedNode !== d.id) {
           d3.select(this).select('circle')
             .attr('stroke-width', 2)
-            .attr('stroke', '#666');
+            .attr('stroke', '#666')
+            .attr('r', 22);
         }
       });
 
