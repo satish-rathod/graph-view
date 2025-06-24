@@ -753,8 +753,8 @@ export const ControlPanel = ({
                   {algorithmState.endNode || 'None'}
                 </span>
                 <button
-                  onClick={() => onStartNodeSelection('targetNode')}
-                  className="px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 text-xs rounded transition-colors"
+                  onClick={() => onStartNodeSelection('endNode')}
+                  className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs rounded transition-colors"
                 >
                   Select
                 </button>
