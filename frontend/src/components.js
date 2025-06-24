@@ -91,7 +91,9 @@ export const InputPanel = ({
 // Graph Editor Component
 export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents }) => {
   const svgRef = useRef();
+  const simulationRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
+  const [isSimulationRunning, setIsSimulationRunning] = useState(false);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -112,37 +114,41 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
 
     svg.call(zoom);
 
-    // Draw edges
-    const edges = g.selectAll('.edge')
-      .data(graphData.edges)
-      .enter()
-      .append('line')
-      .attr('class', 'edge graph-edge')
-      .attr('x1', d => {
-        const sourceNode = graphData.nodes.find(n => n.id === d.source);
-        return sourceNode ? sourceNode.x : 0;
-      })
-      .attr('y1', d => {
-        const sourceNode = graphData.nodes.find(n => n.id === d.source);
-        return sourceNode ? sourceNode.y : 0;
-      })
-      .attr('x2', d => {
-        const targetNode = graphData.nodes.find(n => n.id === d.target);
-        return targetNode ? targetNode.x : 0;
-      })
-      .attr('y2', d => {
-        const targetNode = graphData.nodes.find(n => n.id === d.target);
-        return targetNode ? targetNode.y : 0;
-      })
-      .attr('stroke', '#333')
-      .attr('stroke-width', 2);
+    // Prepare data for D3 force simulation
+    const nodes = graphData.nodes.map(d => ({
+      ...d,
+      x: d.x || width / 2 + (Math.random() - 0.5) * 100,
+      y: d.y || height / 2 + (Math.random() - 0.5) * 100
+    }));
 
-    // Add arrowheads for directed graphs
+    const links = graphData.edges.map(d => ({
+      source: d.source,
+      target: d.target,
+      weight: d.weight || 1
+    }));
+
+    // Create force simulation
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links)
+        .id(d => d.id)
+        .distance(d => 80 + (d.weight || 1) * 20)
+        .strength(0.3))
+      .force('charge', d3.forceManyBody()
+        .strength(-400)
+        .distanceMax(300))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(30))
+      .alphaTarget(0.1)
+      .alphaDecay(0.05);
+
+    simulationRef.current = simulation;
+
+    // Add arrowhead marker for directed graphs
     if (isDirected) {
       svg.append('defs').append('marker')
         .attr('id', 'arrowhead')
         .attr('viewBox', '-0 -5 10 10')
-        .attr('refX', 25)
+        .attr('refX', 28)
         .attr('refY', 0)
         .attr('orient', 'auto')
         .attr('markerWidth', 8)
@@ -150,83 +156,174 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
         .attr('xoverflow', 'visible')
         .append('svg:path')
         .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
-        .attr('fill', '#333')
+        .attr('fill', '#666')
         .style('stroke', 'none');
-
-      edges.attr('marker-end', 'url(#arrowhead)');
     }
 
-    // Draw nodes
-    const nodeGroups = g.selectAll('.node-group')
-      .data(graphData.nodes)
+    // Create links
+    const link = g.append('g')
+      .attr('class', 'links')
+      .selectAll('line')
+      .data(links)
+      .enter()
+      .append('line')
+      .attr('class', 'edge graph-edge')
+      .attr('stroke', '#999')
+      .attr('stroke-opacity', 0.8)
+      .attr('stroke-width', d => Math.sqrt(d.weight || 1) * 2)
+      .attr('marker-end', isDirected ? 'url(#arrowhead)' : null);
+
+    // Create nodes
+    const node = g.append('g')
+      .attr('class', 'nodes')
+      .selectAll('g')
+      .data(nodes)
       .enter()
       .append('g')
-      .attr('class', 'node-group graph-node')
-      .attr('transform', d => `translate(${d.x}, ${d.y})`);
+      .attr('class', 'node-group graph-node');
 
-    // Node circles
-    nodeGroups.append('circle')
-      .attr('r', 20)
+    // Node circles with better styling
+    node.append('circle')
+      .attr('r', 22)
       .attr('fill', d => selectedNode === d.id ? '#4A90E2' : '#fff')
-      .attr('stroke', '#333')
-      .attr('stroke-width', 2)
+      .attr('stroke', d => selectedNode === d.id ? '#357abd' : '#666')
+      .attr('stroke-width', d => selectedNode === d.id ? 3 : 2)
+      .attr('filter', 'drop-shadow(2px 2px 4px rgba(0,0,0,0.1))')
       .on('click', (event, d) => {
+        event.stopPropagation();
         setSelectedNode(selectedNode === d.id ? null : d.id);
+      })
+      .on('mouseenter', function(event, d) {
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .attr('r', 25)
+          .attr('stroke-width', 3);
+      })
+      .on('mouseleave', function(event, d) {
+        if (selectedNode !== d.id) {
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr('r', 22)
+            .attr('stroke-width', 2);
+        }
       });
 
-    // Node labels
-    nodeGroups.append('text')
+    // Node labels with better positioning
+    node.append('text')
       .attr('class', 'graph-node-text')
       .text(d => d.id)
-      .attr('fill', d => selectedNode === d.id ? '#fff' : '#333');
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('font-size', '14px')
+      .attr('font-weight', '600')
+      .attr('fill', d => selectedNode === d.id ? '#fff' : '#333')
+      .attr('pointer-events', 'none');
 
-    // Add drag behavior
-    const drag = d3.drag()
+    // Enhanced drag behavior with proper coordinate handling
+    const dragBehavior = d3.drag()
       .on('start', function(event, d) {
-        d3.select(this).raise();
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
         setSelectedNode(d.id);
+        setIsSimulationRunning(true);
+        
+        // Visual feedback
+        d3.select(this).select('circle')
+          .attr('stroke-width', 4)
+          .attr('stroke', '#4A90E2');
       })
       .on('drag', function(event, d) {
-        const newX = event.x;
-        const newY = event.y;
+        // Get the current transform
+        const transform = d3.zoomTransform(svg.node());
         
-        d3.select(this).attr('transform', `translate(${newX}, ${newY})`);
+        // Apply inverse transform to get correct coordinates
+        const [x, y] = transform.invert([event.x, event.y]);
         
-        // Update edges
-        g.selectAll('.edge')
-          .attr('x1', edge => {
-            const sourceNode = graphData.nodes.find(n => n.id === edge.source);
-            return sourceNode && sourceNode.id === d.id ? newX : sourceNode ? sourceNode.x : 0;
-          })
-          .attr('y1', edge => {
-            const sourceNode = graphData.nodes.find(n => n.id === edge.source);
-            return sourceNode && sourceNode.id === d.id ? newY : sourceNode ? sourceNode.y : 0;
-          })
-          .attr('x2', edge => {
-            const targetNode = graphData.nodes.find(n => n.id === edge.target);
-            return targetNode && targetNode.id === d.id ? newX : targetNode ? targetNode.x : 0;
-          })
-          .attr('y2', edge => {
-            const targetNode = graphData.nodes.find(n => n.id === edge.target);
-            return targetNode && targetNode.id === d.id ? newY : targetNode ? targetNode.y : 0;
-          });
+        d.fx = x;
+        d.fy = y;
       })
       .on('end', function(event, d) {
-        onNodeMove(d.id, event.x, event.y);
+        if (!event.active) simulation.alphaTarget(0.1);
+        d.fx = null;
+        d.fy = null;
+        setIsSimulationRunning(false);
+        
+        // Update parent component with new position
+        onNodeMove(d.id, d.x, d.y);
+        
+        // Reset visual feedback
+        if (selectedNode !== d.id) {
+          d3.select(this).select('circle')
+            .attr('stroke-width', 2)
+            .attr('stroke', '#666');
+        }
       });
 
-    nodeGroups.call(drag);
+    node.call(dragBehavior);
+
+    // Update positions on simulation tick
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      node
+        .attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // Stop simulation after some time to prevent excessive CPU usage
+    setTimeout(() => {
+      simulation.alphaTarget(0);
+    }, 5000);
+
+    // Cleanup
+    return () => {
+      if (simulationRef.current) {
+        simulationRef.current.stop();
+      }
+    };
 
   }, [graphData, isDirected, selectedNode, onNodeMove]);
 
+  // Method to restart physics simulation
+  const restartSimulation = () => {
+    if (simulationRef.current) {
+      simulationRef.current.alphaTarget(0.3).restart();
+      setIsSimulationRunning(true);
+      setTimeout(() => {
+        simulationRef.current.alphaTarget(0.1);
+        setIsSimulationRunning(false);
+      }, 3000);
+    }
+  };
+
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
       <svg
         ref={svgRef}
         width="100%"
         height="100%"
-        className="cursor-move"
+        className="cursor-grab"
+        style={{ background: 'radial-gradient(circle at 50% 50%, #fefefe 0%, #f8f9fa 100%)' }}
       />
+      
+      {/* Physics control button */}
+      <button
+        onClick={restartSimulation}
+        className={`absolute top-4 right-4 px-3 py-2 text-sm rounded-lg shadow-md transition-all ${
+          isSimulationRunning 
+            ? 'bg-orange-500 text-white animate-pulse' 
+            : 'bg-blue-500 text-white hover:bg-blue-600'
+        }`}
+        title="Restart Physics Simulation"
+      >
+        {isSimulationRunning ? '⚡ Running' : '🔄 Physics'}
+      </button>
     </div>
   );
 };
