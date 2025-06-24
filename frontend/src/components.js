@@ -178,21 +178,27 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
       return nodeData;
     });
 
-    const links = graphData.edges;
+    const links = graphData.edges.map(edge => ({
+      ...edge,
+      weight: edge.weight || null
+    }));
 
-    // Add arrowhead marker for directed graphs
+    // Add arrowhead marker for directed graphs with better styling
     if (isDirected) {
-      svg.append('defs').append('marker')
+      const defs = svg.append('defs');
+      
+      defs.append('marker')
         .attr('id', 'arrowhead')
-        .attr('viewBox', '-5 -5 10 10')
-        .attr('refX', 22)
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 18) // Adjusted to be closer to node edge
         .attr('refY', 0)
         .attr('orient', 'auto')
-        .attr('markerWidth', 6)
-        .attr('markerHeight', 6)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 8)
         .append('svg:path')
-        .attr('d', 'M 0,0 L 10,5 L 7.5,0 L 10,-5 Z')
-        .attr('fill', '#666');
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', '#666')
+        .attr('stroke', 'none');
     }
 
     // Create links
@@ -203,9 +209,27 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
       .enter()
       .append('line')
       .attr('stroke', '#999')
-      .attr('stroke-width', 2)
+      .attr('stroke-width', d => d.weight ? Math.max(1, Math.min(5, d.weight)) : 2)
       .attr('stroke-opacity', 0.8)
       .attr('marker-end', isDirected ? 'url(#arrowhead)' : null);
+
+    // Create edge weight labels for weighted edges
+    const edgeLabels = g.append('g')
+      .attr('class', 'edge-labels')
+      .selectAll('text')
+      .data(links.filter(d => d.weight !== null && d.weight !== undefined))
+      .enter()
+      .append('text')
+      .attr('class', 'edge-weight')
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('font-size', '12px')
+      .attr('font-weight', '600')
+      .attr('fill', '#4A5568')
+      .attr('stroke', 'white')
+      .attr('stroke-width', '3')
+      .attr('paint-order', 'stroke')
+      .text(d => d.weight);
 
     // Create nodes
     const nodeGroups = g.append('g')
