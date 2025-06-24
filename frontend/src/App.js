@@ -545,6 +545,7 @@ function App() {
             isTreeMode={isTreeMode}
             setIsTreeMode={setIsTreeMode}
             algorithmState={algorithmState}
+            onSelectAlgorithm={selectAlgorithm}
             onExecuteAlgorithm={executeAlgorithm}
             onResetAlgorithm={resetAlgorithmState}
             onStartNodeSelection={startNodeSelection}
