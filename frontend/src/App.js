@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { GraphEditor, InputPanel, ControlPanel, Header } from './components';
+import { GraphAlgorithms } from './algorithms';
+import { AnimationController, VisualStateManager } from './AnimationController';
 
 function App() {
   const [graphData, setGraphData] = useState({
@@ -32,6 +34,49 @@ function App() {
   const [isTreeMode, setIsTreeMode] = useState(false);
   const [showComponents, setShowComponents] = useState(false);
   const [activeTab, setActiveTab] = useState('editor');
+
+  // Algorithm state management
+  const [algorithmState, setAlgorithmState] = useState({
+    selectedAlgorithm: null,
+    startNode: null,
+    endNode: null,
+    targetNode: null,
+    isRunning: false,
+    currentStep: null,
+    stepIndex: -1,
+    totalSteps: 0,
+    result: null,
+    message: ''
+  });
+
+  // Animation controllers
+  const animationController = useRef(null);
+  const visualStateManager = useRef(new VisualStateManager());
+
+  // Initialize animation controller
+  useEffect(() => {
+    animationController.current = new AnimationController(
+      (step, stepIndex, totalSteps) => {
+        setAlgorithmState(prev => ({
+          ...prev,
+          currentStep: step,
+          stepIndex,
+          totalSteps,
+          message: step?.message || ''
+        }));
+        
+        // Update visual state
+        visualStateManager.current.updateFromStep(step, algorithmState.selectedAlgorithm);
+      },
+      () => {
+        setAlgorithmState(prev => ({
+          ...prev,
+          isRunning: false,
+          message: 'Algorithm completed!'
+        }));
+      }
+    );
+  }, [algorithmState.selectedAlgorithm]);
 
   // Parse input text to create graph data
   const parseGraphInput = (text) => {
@@ -76,7 +121,95 @@ function App() {
   useEffect(() => {
     const newGraphData = parseGraphInput(inputText);
     setGraphData(newGraphData);
+    // Reset algorithm state when graph changes
+    resetAlgorithmState();
   }, [inputText]);
+
+  // Algorithm execution functions
+  const executeAlgorithm = (algorithm, options = {}) => {
+    const { nodes, edges } = graphData;
+    
+    // Reset visual state
+    visualStateManager.current.reset();
+    
+    let result;
+    
+    switch (algorithm) {
+      case 'dijkstra':
+        if (!algorithmState.startNode || !algorithmState.endNode) {
+          alert('Please select both start and end nodes for shortest path');
+          return;
+        }
+        result = GraphAlgorithms.dijkstra(nodes, edges, algorithmState.startNode, algorithmState.endNode);
+        break;
+        
+      case 'dfs':
+        if (!algorithmState.startNode) {
+          alert('Please select a start node for DFS');
+          return;
+        }
+        result = GraphAlgorithms.dfs(nodes, edges, algorithmState.startNode, algorithmState.targetNode);
+        break;
+        
+      case 'bfs':
+        if (!algorithmState.startNode) {
+          alert('Please select a start node for BFS');
+          return;
+        }
+        result = GraphAlgorithms.bfs(nodes, edges, algorithmState.startNode, algorithmState.targetNode);
+        break;
+        
+      case 'topological':
+        if (!isDirected) {
+          alert('Topological sort requires a directed graph');
+          return;
+        }
+        result = GraphAlgorithms.topologicalSort(nodes, edges);
+        if (result.hasCycle) {
+          alert('Graph contains cycles - topological sort not possible');
+          return;
+        }
+        break;
+        
+      default:
+        return;
+    }
+    
+    setAlgorithmState(prev => ({
+      ...prev,
+      selectedAlgorithm: algorithm,
+      isRunning: false,
+      result: result,
+      stepIndex: -1,
+      totalSteps: result.steps.length,
+      currentStep: null,
+      message: 'Algorithm loaded. Click play to start animation.'
+    }));
+    
+    // Load steps into animation controller
+    animationController.current.loadSteps(result.steps);
+  };
+
+  const resetAlgorithmState = () => {
+    setAlgorithmState({
+      selectedAlgorithm: null,
+      startNode: null,
+      endNode: null,
+      targetNode: null,
+      isRunning: false,
+      currentStep: null,
+      stepIndex: -1,
+      totalSteps: 0,
+      result: null,
+      message: ''
+    });
+    
+    if (animationController.current) {
+      animationController.current.stop();
+    }
+    
+    visualStateManager.current.reset();
+  };
 
   const generateLayout = () => {
     // Enhanced force-directed layout with better physics
@@ -273,6 +406,14 @@ function App() {
     }));
   };
 
+  // Node selection for algorithms
+  const handleNodeSelect = (nodeId, selectionType) => {
+    setAlgorithmState(prev => ({
+      ...prev,
+      [selectionType]: prev[selectionType] === nodeId ? null : nodeId
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-purple-50">
       <Header />
@@ -367,6 +508,9 @@ function App() {
                 onNodeMove={updateNodePosition}
                 showComponents={showComponents}
                 isTreeMode={isTreeMode}
+                algorithmState={algorithmState}
+                visualStates={visualStateManager.current.getCurrentStates()}
+                onNodeSelect={handleNodeSelect}
               />
             </div>
           </div>
@@ -380,6 +524,12 @@ function App() {
             setShowComponents={setShowComponents}
             isTreeMode={isTreeMode}
             setIsTreeMode={setIsTreeMode}
+            algorithmState={algorithmState}
+            onExecuteAlgorithm={executeAlgorithm}
+            onResetAlgorithm={resetAlgorithmState}
+            animationController={animationController.current}
+            graphData={graphData}
+            isDirected={isDirected}
           />
         </div>
       </div>
