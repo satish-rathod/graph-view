@@ -428,6 +428,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
           return 0;
         });
     };
+    };
 
     // FIXED DRAG BEHAVIOR - No coordinate transformation issues!
     const dragBehavior = d3.drag()
