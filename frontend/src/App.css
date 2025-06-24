@@ -64,24 +64,40 @@
   opacity: 0.8;
 }
 
-/* Graph specific styles */
+/* Graph specific styles with enhanced physics and animations */
 .graph-node {
-  cursor: pointer;
+  cursor: grab;
   user-select: none;
+  transition: all 0.2s ease;
+}
+
+.graph-node:active {
+  cursor: grabbing;
 }
 
 .graph-node:hover {
-  opacity: 0.8;
+  filter: drop-shadow(3px 3px 8px rgba(0,0,0,0.2));
 }
 
 .graph-node.selected circle {
   fill: #4A90E2;
+  stroke: #357abd;
+  stroke-width: 3px;
+  filter: drop-shadow(2px 2px 6px rgba(74, 144, 226, 0.3));
 }
 
 .graph-edge {
-  stroke: #333;
+  stroke: #999;
   stroke-width: 2px;
   fill: none;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.graph-edge:hover {
+  stroke: #666;
+  stroke-width: 3px;
+  opacity: 1;
 }
 
 .graph-node-text {
@@ -92,6 +108,151 @@
   dominant-baseline: central;
   fill: #333;
   pointer-events: none;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+}
+
+/* Physics simulation styles */
+.physics-active .graph-node {
+  animation: physicsJiggle 0.1s ease-in-out infinite alternate;
+}
+
+@keyframes physicsJiggle {
+  0% { transform: translateX(0px) translateY(0px); }
+  100% { transform: translateX(0.5px) translateY(0.5px); }
+}
+
+/* Enhanced node styling */
+.graph-node circle {
+  filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.1));
+  transition: all 0.2s ease;
+}
+
+.graph-node:hover circle {
+  filter: drop-shadow(3px 3px 8px rgba(0,0,0,0.2));
+  transform: scale(1.1);
+}
+
+/* Edge weight labels */
+.edge-weight {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  fill: #666;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  background: rgba(255,255,255,0.8);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* Canvas background with grid pattern */
+.graph-canvas {
+  background: 
+    radial-gradient(circle at 25% 25%, #f8f9fa 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, #f0f0f0 0%, transparent 50%),
+    linear-gradient(45deg, transparent 24%, rgba(0,0,0,0.02) 25%, rgba(0,0,0,0.02) 26%, transparent 27%, transparent 74%, rgba(0,0,0,0.02) 75%, rgba(0,0,0,0.02) 76%, transparent 77%);
+  background-size: 50px 50px;
+}
+
+/* Improved zoom controls */
+.zoom-controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.zoom-btn {
+  width: 40px;
+  height: 40px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.zoom-btn:hover {
+  background: #fff;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Component highlighting */
+.component-0 { stroke: #e74c3c; fill: #e74c3c; }
+.component-1 { stroke: #3498db; fill: #3498db; }
+.component-2 { stroke: #2ecc71; fill: #2ecc71; }
+.component-3 { stroke: #f39c12; fill: #f39c12; }
+.component-4 { stroke: #9b59b6; fill: #9b59b6; }
+.component-5 { stroke: #1abc9c; fill: #1abc9c; }
+
+/* Tree mode specific styles */
+.tree-mode .graph-node circle {
+  fill: #fff;
+  stroke: #27ae60;
+  stroke-width: 2px;
+}
+
+.tree-mode .graph-edge {
+  stroke: #27ae60;
+  stroke-width: 2px;
+}
+
+/* Loading and simulation states */
+.simulation-running {
+  position: relative;
+}
+
+.simulation-running::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 40%, rgba(74, 144, 226, 0.1) 50%, transparent 60%);
+  pointer-events: none;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Responsive node sizes */
+@media (max-width: 768px) {
+  .graph-node circle {
+    r: 18px;
+  }
+  
+  .graph-node-text {
+    font-size: 12px;
+  }
+  
+  .graph-edge {
+    stroke-width: 1.5px;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .graph-node circle {
+    stroke-width: 1.5px;
+  }
+  
+  .graph-edge {
+    stroke-width: 1.5px;
+  }
 }
 
 .ace_editor {
