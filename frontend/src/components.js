@@ -390,13 +390,16 @@ export const GraphEditor = ({
       .attr('cursor', 'grab')
       .on('click', (event, d) => {
         event.stopPropagation();
+        console.log('Node clicked:', d.id, 'Selection mode:', algorithmState.selectionMode);
         
         // Handle algorithm node selection
         if (algorithmState.selectionMode) {
+          console.log('Calling onNodeSelect with nodeId:', d.id);
           onNodeSelect(d.id);
           return;
         }
         
+        console.log('No selection mode, setting selected node:', d.id);
         setSelectedNode(selectedNode === d.id ? null : d.id);
       });
 
