@@ -105,9 +105,13 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
     // Create main group
     const g = svg.append('g');
 
-    // Add zoom behavior
+    // Add zoom behavior - disable zoom on drag to prevent conflicts
     const zoom = d3.zoom()
       .scaleExtent([0.1, 4])
+      .filter(function(event) {
+        // Disable zoom when dragging nodes
+        return !event.target.closest('.node-group');
+      })
       .on('zoom', (event) => {
         g.attr('transform', event.transform);
       });
