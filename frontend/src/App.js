@@ -41,7 +41,15 @@ function App() {
 
     lines.forEach(line => {
       const parts = line.trim().split(/\s+/);
-      if (parts.length >= 2) {
+      
+      if (parts.length === 1) {
+        // Single node entry (like "100")
+        const nodeId = parseInt(parts[0]);
+        if (!isNaN(nodeId)) {
+          nodeSet.add(nodeId);
+        }
+      } else if (parts.length >= 2) {
+        // Edge entry (like "1 2" or "1 2 5.5")
         const source = parseInt(parts[0]);
         const target = parseInt(parts[1]);
         const weight = parts.length > 2 ? parseFloat(parts[2]) : null;
@@ -243,6 +251,19 @@ function App() {
     return newNodes.map(node => ({ id: node.id, x: node.x, y: node.y }));
   };
 
+  // Clear input functionality
+  const clearInput = () => {
+    setInputText('');
+  };
+
+  // Expose clear function globally for header button
+  useEffect(() => {
+    window.clearGraphInput = clearInput;
+    return () => {
+      delete window.clearGraphInput;
+    };
+  }, []);
+
   const updateNodePosition = (nodeId, x, y) => {
     setGraphData(prev => ({
       ...prev,
@@ -253,12 +274,12 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-cs-gray">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-purple-50">
       <Header />
       
       <div className="flex h-screen pt-16">
         {/* Left Panel - Input */}
-        <div className="w-80 bg-white border-r border-cs-border flex flex-col">
+        <div className="w-80 shadow-xl">
           <InputPanel 
             inputText={inputText}
             setInputText={setInputText}
@@ -272,56 +293,87 @@ function App() {
         </div>
 
         {/* Center Panel - Graph Visualization */}
-        <div className="flex-1 flex flex-col">
-          <div className="bg-white border-b border-cs-border p-4">
-            <div className="flex space-x-4">
+        <div className="flex-1 flex flex-col bg-white shadow-lg">
+          {/* Enhanced Tab Navigation */}
+          <div className="bg-gradient-to-r from-slate-50 to-indigo-50 border-b border-slate-200 p-4 shadow-sm">
+            <div className="flex space-x-2 mb-4">
               <button
                 onClick={() => setIsDirected(false)}
-                className={`px-4 py-2 rounded ${!isDirected ? 'bg-cs-blue text-white' : 'bg-gray-100 text-gray-700'}`}
+                className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center space-x-2 ${
+                  !isDirected 
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform -translate-y-0.5' 
+                    : 'bg-white/80 text-slate-600 hover:bg-white hover:text-slate-800 border border-slate-200 hover:border-blue-300'
+                }`}
               >
-                Undirected
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                </svg>
+                <span>Undirected</span>
               </button>
               <button
                 onClick={() => setIsDirected(true)}
-                className={`px-4 py-2 rounded ${isDirected ? 'bg-cs-blue text-white' : 'bg-gray-100 text-gray-700'}`}
+                className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center space-x-2 ${
+                  isDirected 
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg transform -translate-y-0.5' 
+                    : 'bg-white/80 text-slate-600 hover:bg-white hover:text-slate-800 border border-slate-200 hover:border-purple-300'
+                }`}
               >
-                Directed
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+                <span>Directed</span>
               </button>
+            </div>
+            
+            <div className="flex space-x-2">
               <button
                 onClick={() => setActiveTab('editor')}
-                className={`px-4 py-2 rounded ${activeTab === 'editor' ? 'bg-cs-blue text-white' : 'bg-gray-100 text-gray-700'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'editor' 
+                    ? 'bg-indigo-500 text-white shadow-md' 
+                    : 'bg-white/60 text-slate-600 hover:bg-white hover:text-slate-800 border border-slate-200'
+                }`}
               >
                 Editor
               </button>
               <button
                 onClick={() => setActiveTab('costs')}
-                className={`px-4 py-2 rounded ${activeTab === 'costs' ? 'bg-cs-blue text-white' : 'bg-gray-100 text-gray-700'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'costs' 
+                    ? 'bg-green-500 text-white shadow-md' 
+                    : 'bg-white/60 text-slate-600 hover:bg-white hover:text-slate-800 border border-slate-200'
+                }`}
               >
                 Costs
               </button>
               <button
                 onClick={() => setActiveTab('colors')}
-                className={`px-4 py-2 rounded ${activeTab === 'colors' ? 'bg-cs-blue text-white' : 'bg-gray-100 text-gray-700'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'colors' 
+                    ? 'bg-orange-500 text-white shadow-md' 
+                    : 'bg-white/60 text-slate-600 hover:bg-white hover:text-slate-800 border border-slate-200'
+                }`}
               >
                 Custom Colors
               </button>
             </div>
           </div>
           
-          <div className="flex-1 p-4">
-            <div className="h-full bg-white border border-cs-border rounded-lg">
+          <div className="flex-1 p-6 bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+            <div className="h-full bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
               <GraphEditor
                 graphData={graphData}
                 isDirected={isDirected}
                 onNodeMove={updateNodePosition}
                 showComponents={showComponents}
+                isTreeMode={isTreeMode}
               />
             </div>
           </div>
         </div>
 
         {/* Right Panel - Controls */}
-        <div className="w-80 bg-white border-l border-cs-border">
+        <div className="w-80 shadow-xl">
           <ControlPanel
             generateLayout={generateLayout}
             showComponents={showComponents}
