@@ -353,6 +353,7 @@ function App() {
                 isDirected={isDirected}
                 onNodeMove={updateNodePosition}
                 showComponents={showComponents}
+                isTreeMode={isTreeMode}
               />
             </div>
           </div>
