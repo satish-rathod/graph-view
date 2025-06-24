@@ -275,15 +275,15 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
       console.log('Undirected graph - no arrows');
     }
 
-    // Create links (both straight and curved)
+    // Create links (both straight and curved) with tree mode styling
     const linkElements = g.append('g')
       .attr('class', 'links')
       .selectAll('path')
       .data(processedLinks)
       .enter()
       .append('path')
-      .attr('stroke', '#999')
-      .attr('stroke-width', d => d.weight ? Math.max(1, Math.min(5, d.weight)) : 2)
+      .attr('stroke', isTreeMode ? '#27ae60' : '#999')
+      .attr('stroke-width', d => d.weight ? Math.max(1, Math.min(5, d.weight)) : (isTreeMode ? 3 : 2))
       .attr('stroke-opacity', 0.8)
       .attr('fill', 'none')
       .attr('marker-end', isDirected ? 'url(#arrowhead)' : null);
