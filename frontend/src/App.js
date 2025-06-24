@@ -46,7 +46,8 @@ function App() {
     stepIndex: -1,
     totalSteps: 0,
     result: null,
-    message: ''
+    message: '',
+    selectionMode: null // 'startNode', 'endNode', 'targetNode'
   });
 
   // Animation controllers
@@ -125,8 +126,27 @@ function App() {
     resetAlgorithmState();
   }, [inputText]);
 
+  // Node selection for algorithms
+  const handleNodeSelect = (nodeId) => {
+    if (algorithmState.selectionMode) {
+      setAlgorithmState(prev => ({
+        ...prev,
+        [prev.selectionMode]: prev[prev.selectionMode] === nodeId ? null : nodeId,
+        selectionMode: null
+      }));
+    }
+  };
+
+  // Start node selection mode
+  const startNodeSelection = (mode) => {
+    setAlgorithmState(prev => ({
+      ...prev,
+      selectionMode: mode
+    }));
+  };
+
   // Algorithm execution functions
-  const executeAlgorithm = (algorithm, options = {}) => {
+  const executeAlgorithm = (algorithm) => {
     const { nodes, edges } = graphData;
     
     // Reset visual state
@@ -201,7 +221,8 @@ function App() {
       stepIndex: -1,
       totalSteps: 0,
       result: null,
-      message: ''
+      message: '',
+      selectionMode: null
     });
     
     if (animationController.current) {
@@ -406,14 +427,6 @@ function App() {
     }));
   };
 
-  // Node selection for algorithms
-  const handleNodeSelect = (nodeId, selectionType) => {
-    setAlgorithmState(prev => ({
-      ...prev,
-      [selectionType]: prev[selectionType] === nodeId ? null : nodeId
-    }));
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-purple-50">
       <Header />
@@ -527,6 +540,7 @@ function App() {
             algorithmState={algorithmState}
             onExecuteAlgorithm={executeAlgorithm}
             onResetAlgorithm={resetAlgorithmState}
+            onStartNodeSelection={startNodeSelection}
             animationController={animationController.current}
             graphData={graphData}
             isDirected={isDirected}
