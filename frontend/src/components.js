@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-text';
-import 'ace-builds/src-noconflict/theme-textmate';
+import 'ace-builds/src-noconflict/theme-github';
 
 // Header Component with improved styling
 export const Header = () => {
