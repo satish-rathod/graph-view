@@ -157,6 +157,10 @@ function App() {
   const executeAlgorithm = (algorithm) => {
     const { nodes, edges } = graphData;
     
+    console.log('Executing algorithm:', algorithm);
+    console.log('Algorithm state:', algorithmState);
+    console.log('Graph data:', { nodes: nodes.length, edges: edges.length });
+    
     // Reset visual state
     visualStateManager.current.reset();
     
@@ -168,6 +172,7 @@ function App() {
           alert('Please select both start and end nodes for shortest path');
           return;
         }
+        console.log('Running Dijkstra from', algorithmState.startNode, 'to', algorithmState.endNode);
         result = GraphAlgorithms.dijkstra(nodes, edges, algorithmState.startNode, algorithmState.endNode);
         break;
         
@@ -176,6 +181,7 @@ function App() {
           alert('Please select a start node for DFS');
           return;
         }
+        console.log('Running DFS from', algorithmState.startNode, 'target:', algorithmState.targetNode);
         result = GraphAlgorithms.dfs(nodes, edges, algorithmState.startNode, algorithmState.targetNode);
         break;
         
@@ -184,6 +190,7 @@ function App() {
           alert('Please select a start node for BFS');
           return;
         }
+        console.log('Running BFS from', algorithmState.startNode, 'target:', algorithmState.targetNode);
         result = GraphAlgorithms.bfs(nodes, edges, algorithmState.startNode, algorithmState.targetNode);
         break;
         
@@ -192,6 +199,7 @@ function App() {
           alert('Topological sort requires a directed graph');
           return;
         }
+        console.log('Running Topological Sort');
         result = GraphAlgorithms.topologicalSort(nodes, edges);
         if (result.hasCycle) {
           alert('Graph contains cycles - topological sort not possible');
@@ -200,7 +208,16 @@ function App() {
         break;
         
       default:
+        console.error('Unknown algorithm:', algorithm);
         return;
+    }
+    
+    console.log('Algorithm result:', result);
+    
+    if (!result || !result.steps) {
+      console.error('Algorithm execution failed or returned invalid result');
+      alert('Algorithm execution failed. Please check the console for details.');
+      return;
     }
     
     setAlgorithmState(prev => ({
@@ -214,7 +231,12 @@ function App() {
     }));
     
     // Load steps into animation controller
-    animationController.current.loadSteps(result.steps);
+    if (animationController.current) {
+      animationController.current.loadSteps(result.steps);
+      console.log('Steps loaded into animation controller:', result.steps.length);
+    } else {
+      console.error('Animation controller not available');
+    }
   };
 
   const resetAlgorithmState = () => {
