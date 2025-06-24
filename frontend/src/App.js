@@ -351,7 +351,7 @@ function App() {
         </div>
 
         {/* Right Panel - Controls */}
-        <div className="w-80 bg-white border-l border-cs-border">
+        <div className="w-80 shadow-xl">
           <ControlPanel
             generateLayout={generateLayout}
             showComponents={showComponents}
