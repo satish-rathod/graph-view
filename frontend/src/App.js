@@ -128,12 +128,21 @@ function App() {
 
   // Node selection for algorithms
   const handleNodeSelect = (nodeId) => {
+    console.log('handleNodeSelect called with nodeId:', nodeId, 'selectionMode:', algorithmState.selectionMode);
+    
     if (algorithmState.selectionMode) {
-      setAlgorithmState(prev => ({
-        ...prev,
-        [prev.selectionMode]: prev[prev.selectionMode] === nodeId ? null : nodeId,
-        selectionMode: null
-      }));
+      console.log('Setting', algorithmState.selectionMode, 'to', nodeId);
+      setAlgorithmState(prev => {
+        const newState = {
+          ...prev,
+          [prev.selectionMode]: prev[prev.selectionMode] === nodeId ? null : nodeId,
+          selectionMode: null
+        };
+        console.log('New algorithm state:', newState);
+        return newState;
+      });
+    } else {
+      console.log('No selection mode active, ignoring node selection');
     }
   };
 
