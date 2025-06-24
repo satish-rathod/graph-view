@@ -126,11 +126,21 @@ export const InputPanel = ({
   );
 };
 
-// Graph Editor Component with FIXED Drag Behavior + Tree Mode + Components + Curved Edges
-export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents, isTreeMode }) => {
+// Enhanced Graph Editor Component with Algorithm Visualization
+export const GraphEditor = ({ 
+  graphData, 
+  isDirected, 
+  onNodeMove, 
+  showComponents, 
+  isTreeMode, 
+  algorithmState, 
+  visualStates, 
+  onNodeSelect 
+}) => {
   const svgRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(null); // 'start', 'end', 'target'
   
   // Store node positions locally to prevent React re-render interference
   const nodePositionsRef = useRef(new Map());
@@ -253,7 +263,6 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
 
     // Add arrowhead marker for directed graphs with better styling
     if (isDirected) {
-      console.log('Creating arrowhead markers for directed graph');
       const defs = svg.append('defs');
       
       defs.append('marker')
@@ -268,19 +277,43 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
         .attr('d', 'M0,-5L10,0L0,5')
         .attr('fill', '#666')
         .attr('stroke', 'none');
-    } else {
-      console.log('Undirected graph - no arrows');
     }
 
-    // Create links (both straight and curved) with tree mode styling
+    // Create links with dynamic styling based on algorithm state
     const linkElements = g.append('g')
       .attr('class', 'links')
       .selectAll('path')
       .data(processedLinks)
       .enter()
       .append('path')
-      .attr('stroke', isTreeMode ? '#27ae60' : '#999')
-      .attr('stroke-width', d => d.weight ? Math.max(1, Math.min(5, d.weight)) : (isTreeMode ? 3 : 2))
+      .attr('stroke', d => {
+        // Check if this edge is part of the highlighted path
+        if (visualStates.global.highlightedPath.length > 0) {
+          const pathEdges = [];
+          for (let i = 0; i < visualStates.global.highlightedPath.length - 1; i++) {
+            pathEdges.push(`${visualStates.global.highlightedPath[i]}-${visualStates.global.highlightedPath[i + 1]}`);
+          }
+          const edgeId = `${d.source}-${d.target}`;
+          if (pathEdges.includes(edgeId)) {
+            return '#ff9800'; // Orange for highlighted path
+          }
+        }
+        return isTreeMode ? '#27ae60' : '#999';
+      })
+      .attr('stroke-width', d => {
+        // Check if this edge is part of the highlighted path
+        if (visualStates.global.highlightedPath.length > 0) {
+          const pathEdges = [];
+          for (let i = 0; i < visualStates.global.highlightedPath.length - 1; i++) {
+            pathEdges.push(`${visualStates.global.highlightedPath[i]}-${visualStates.global.highlightedPath[i + 1]}`);
+          }
+          const edgeId = `${d.source}-${d.target}`;
+          if (pathEdges.includes(edgeId)) {
+            return 4; // Thicker for highlighted path
+          }
+        }
+        return d.weight ? Math.max(1, Math.min(5, d.weight)) : (isTreeMode ? 3 : 2);
+      })
       .attr('stroke-opacity', 0.8)
       .attr('fill', 'none')
       .attr('marker-end', isDirected ? 'url(#arrowhead)' : null);
@@ -301,12 +334,9 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
       .attr('stroke', 'white')
       .attr('stroke-width', '3')
       .attr('paint-order', 'stroke')
-      .text(d => {
-        console.log('Edge weight:', d.weight);
-        return d.weight;
-      });
+      .text(d => d.weight);
 
-    // Create nodes
+    // Create nodes with algorithm-based styling
     const nodeGroups = g.append('g')
       .attr('class', 'nodes')
       .selectAll('g')
@@ -316,12 +346,24 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
       .attr('class', 'node-group')
       .attr('transform', d => `translate(${d.x},${d.y})`);
 
-    // Node circles with component coloring and tree mode styling
+    // Node circles with enhanced styling based on algorithm state
     nodeGroups.append('circle')
-      .attr('r', 20)
+      .attr('r', d => {
+        const state = visualStates.nodes.get(d.id);
+        return state?.size || 20;
+      })
       .attr('fill', d => {
+        // Priority: Algorithm state > Selection state > Component/Tree mode
+        const state = visualStates.nodes.get(d.id);
+        if (state?.color && state.color !== '#fff') return state.color;
+        
+        // Algorithm node selection highlighting
+        if (algorithmState.startNode === d.id) return '#4caf50'; // Green for start
+        if (algorithmState.endNode === d.id) return '#f44336'; // Red for end
+        if (algorithmState.targetNode === d.id) return '#ff9800'; // Orange for target
+        
         if (selectedNode === d.id) return '#4A90E2';
-        if (isTreeMode) return '#27ae60'; // Green for tree mode
+        if (isTreeMode) return '#27ae60';
         if (showComponents) {
           const componentIndex = components.findIndex(comp => comp.includes(d.id));
           return componentIndex >= 0 ? componentColors[componentIndex % componentColors.length] : '#fff';
@@ -329,19 +371,38 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
         return '#fff';
       })
       .attr('stroke', d => {
+        const state = visualStates.nodes.get(d.id);
+        if (state?.stroke && state.stroke !== '#666') return state.stroke;
+        
+        // Algorithm node selection highlighting
+        if (algorithmState.startNode === d.id) return '#388e3c';
+        if (algorithmState.endNode === d.id) return '#d32f2f';
+        if (algorithmState.targetNode === d.id) return '#f57c00';
+        
         if (selectedNode === d.id) return '#357abd';
-        if (isTreeMode) return '#1e8449'; // Darker green for tree mode
+        if (isTreeMode) return '#1e8449';
         if (showComponents) return '#fff';
         return '#666';
       })
-      .attr('stroke-width', d => selectedNode === d.id ? 3 : 2)
+      .attr('stroke-width', d => {
+        if (algorithmState.startNode === d.id || algorithmState.endNode === d.id || algorithmState.targetNode === d.id) return 3;
+        return selectedNode === d.id ? 3 : 2;
+      })
       .attr('cursor', 'grab')
       .on('click', (event, d) => {
         event.stopPropagation();
+        
+        // Handle algorithm node selection
+        if (selectionMode) {
+          onNodeSelect(d.id, selectionMode);
+          setSelectionMode(null);
+          return;
+        }
+        
         setSelectedNode(selectedNode === d.id ? null : d.id);
       });
 
-    // Node labels
+    // Node labels with enhanced styling
     nodeGroups.append('text')
       .attr('class', 'graph-node-text')
       .attr('text-anchor', 'middle')
@@ -349,12 +410,50 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
       .attr('font-size', '14px')
       .attr('font-weight', '600')
       .attr('fill', d => {
+        const state = visualStates.nodes.get(d.id);
+        if (state?.text && state.text !== '#333') return state.text;
+        
+        if (algorithmState.startNode === d.id || algorithmState.endNode === d.id || algorithmState.targetNode === d.id) return '#fff';
         if (selectedNode === d.id) return '#fff';
         if (showComponents) return '#fff';
         return '#333';
       })
       .attr('pointer-events', 'none')
       .text(d => d.id);
+
+    // Add selection indicators for algorithm nodes
+    nodeGroups.each(function(d) {
+      if (algorithmState.startNode === d.id) {
+        d3.select(this).append('text')
+          .attr('x', -30)
+          .attr('y', -25)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '12px')
+          .attr('font-weight', 'bold')
+          .attr('fill', '#4caf50')
+          .text('START');
+      }
+      if (algorithmState.endNode === d.id) {
+        d3.select(this).append('text')
+          .attr('x', 30)
+          .attr('y', -25)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '12px')
+          .attr('font-weight', 'bold')
+          .attr('fill', '#f44336')
+          .text('END');
+      }
+      if (algorithmState.targetNode === d.id) {
+        d3.select(this).append('text')
+          .attr('x', 0)
+          .attr('y', -35)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '12px')
+          .attr('font-weight', 'bold')
+          .attr('fill', '#ff9800')
+          .text('TARGET');
+      }
+    });
 
     // Function to update link and label positions
     const updateLinks = () => {
@@ -426,7 +525,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
         });
     };
 
-    // FIXED DRAG BEHAVIOR - No coordinate transformation issues!
+    // Enhanced drag behavior
     const dragBehavior = d3.drag()
       .on('start', function(event, d) {
         setIsDragging(true);
@@ -441,7 +540,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
           .style('filter', 'drop-shadow(3px 3px 8px rgba(0,0,0,0.4))');
       })
       .on('drag', function(event, d) {
-        // Get mouse position in SVG coordinates (no transform)
+        // Get mouse position in SVG coordinates
         const [mouseX, mouseY] = d3.pointer(event, svg.node());
         
         // Convert to group coordinates accounting for current transform
@@ -453,7 +552,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
         d.x = newX;
         d.y = newY;
         
-        // Update visual position without re-render
+        // Update visual position
         d3.select(this).attr('transform', `translate(${newX},${newY})`);
         
         // Update cache
@@ -465,7 +564,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
       .on('end', function(event, d) {
         setIsDragging(false);
         
-        // Final position update to React state (only once at the end)
+        // Final position update to React state
         onNodeMove(d.id, d.x, d.y);
         
         // Reset visual feedback
@@ -481,31 +580,28 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
     // Initial link positioning
     updateLinks();
 
-  }, [graphData.edges, graphData.nodes.length, isDirected, showComponents, isTreeMode]);
+  }, [graphData.edges, graphData.nodes.length, isDirected, showComponents, isTreeMode, algorithmState, visualStates]);
 
   // Handle selection changes without full re-render
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-    svg.selectAll('.node-group circle')
-      .attr('fill', function() {
-        const d = d3.select(this.parentNode).datum();
-        return selectedNode === d.id ? '#4A90E2' : '#fff';
-      })
-      .attr('stroke', function() {
-        const d = d3.select(this.parentNode).datum();
-        return selectedNode === d.id ? '#357abd' : '#666';
-      })
-      .attr('stroke-width', function() {
-        const d = d3.select(this.parentNode).datum();
-        return selectedNode === d.id ? 3 : 2;
-      });
-
-    svg.selectAll('.node-group text')
-      .attr('fill', function() {
-        const d = d3.select(this.parentNode).datum();
-        return selectedNode === d.id ? '#fff' : '#333';
-      });
-  }, [selectedNode]);
+    
+    // Update node appearances based on current state
+    svg.selectAll('.node-group').each(function(d) {
+      const circle = d3.select(this).select('circle');
+      const text = d3.select(this).select('text');
+      
+      // Get current visual state
+      const state = visualStates.nodes.get(d.id);
+      
+      if (state && state.color !== '#fff') {
+        circle.attr('fill', state.color);
+        circle.attr('stroke', state.stroke);
+        text.attr('fill', state.text);
+      }
+    });
+    
+  }, [selectedNode, visualStates, algorithmState]);
 
   return (
     <div className="w-full h-full relative">
@@ -517,6 +613,28 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
         style={{ background: 'linear-gradient(45deg, #fafafa 0%, #f0f0f0 100%)' }}
       />
       
+      {/* Selection Mode Indicator */}
+      {selectionMode && (
+        <div className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-2 rounded-lg shadow-lg">
+          <div className="text-sm font-medium">
+            Click a node to select as {selectionMode.toUpperCase()}
+          </div>
+          <button 
+            onClick={() => setSelectionMode(null)}
+            className="ml-2 text-blue-200 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      
+      {/* Algorithm Status */}
+      {algorithmState.message && (
+        <div className="absolute bottom-4 left-4 bg-white border border-gray-200 px-4 py-2 rounded-lg shadow-lg max-w-md">
+          <div className="text-sm text-gray-700">{algorithmState.message}</div>
+        </div>
+      )}
+      
       <div className="absolute top-4 right-4 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow">
         {isDragging ? '🎯 Dragging node...' : '✨ Drag nodes freely'}
       </div>
@@ -524,14 +642,42 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
   );
 };
 
-// Control Panel Component with enhanced styling
+// Enhanced Control Panel with Algorithm Controls
 export const ControlPanel = ({ 
   generateLayout, 
   showComponents, 
   setShowComponents, 
   isTreeMode, 
-  setIsTreeMode 
+  setIsTreeMode,
+  algorithmState,
+  onExecuteAlgorithm,
+  onResetAlgorithm,
+  animationController,
+  graphData,
+  isDirected
 }) => {
+  const [selectedSpeed, setSelectedSpeed] = useState(1000);
+  
+  const handleSpeedChange = (speed) => {
+    setSelectedSpeed(speed);
+    if (animationController) {
+      animationController.setSpeed(speed);
+    }
+  };
+
+  const getAnimationState = () => {
+    return animationController ? animationController.getState() : {
+      isPlaying: false,
+      currentStep: -1,
+      totalSteps: 0,
+      canStepForward: false,
+      canStepBackward: false,
+      progress: 0
+    };
+  };
+
+  const animState = getAnimationState();
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white border-l border-slate-200 shadow-sm">
       {/* Header Section */}
@@ -542,115 +688,281 @@ export const ControlPanel = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
             </svg>
           </div>
-          <h3 className="font-bold text-slate-700 text-lg">Graph Options</h3>
+          <h3 className="font-bold text-slate-700 text-lg">Algorithm Controls</h3>
         </div>
-        
-        <div className="space-y-4">
-          <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200 shadow-sm">
-            <h4 className="font-semibold text-slate-700 mb-3 text-sm">Display Settings</h4>
-            <div className="space-y-3">
-              <label className="flex items-center space-x-3 group cursor-pointer">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={isTreeMode}
-                    onChange={(e) => setIsTreeMode(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 ${
-                    isTreeMode 
-                      ? 'bg-indigo-500 border-indigo-500' 
-                      : 'border-slate-300 group-hover:border-indigo-400'
-                  }`}>
-                    {isTreeMode && (
-                      <svg className="w-3 h-3 text-white absolute top-0.5 left-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-                <span className="text-sm text-slate-700 font-medium">Tree mode</span>
-              </label>
-              
-              <label className="flex items-center space-x-3 group cursor-pointer">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={showComponents}
-                    onChange={(e) => setShowComponents(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 ${
-                    showComponents 
-                      ? 'bg-purple-500 border-purple-500' 
-                      : 'border-slate-300 group-hover:border-purple-400'
-                  }`}>
-                    {showComponents && (
-                      <svg className="w-3 h-3 text-white absolute top-0.5 left-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-                <span className="text-sm text-slate-700 font-medium">Show components</span>
-              </label>
+      </div>
+      
+      {/* Algorithm Selection */}
+      <div className="p-4 border-b border-slate-200">
+        <h4 className="font-semibold text-slate-700 mb-3 text-sm">Graph Algorithms</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onExecuteAlgorithm('dijkstra')}
+            disabled={algorithmState.isRunning}
+            className="px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-xs rounded-lg font-medium transition-colors"
+          >
+            Shortest Path
+          </button>
+          <button
+            onClick={() => onExecuteAlgorithm('topological')}
+            disabled={algorithmState.isRunning || !isDirected}
+            className="px-3 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white text-xs rounded-lg font-medium transition-colors"
+          >
+            Topological Sort
+          </button>
+          <button
+            onClick={() => onExecuteAlgorithm('dfs')}
+            disabled={algorithmState.isRunning}
+            className="px-3 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white text-xs rounded-lg font-medium transition-colors"
+          >
+            DFS Traversal
+          </button>
+          <button
+            onClick={() => onExecuteAlgorithm('bfs')}
+            disabled={algorithmState.isRunning}
+            className="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-300 text-white text-xs rounded-lg font-medium transition-colors"
+          >
+            BFS Traversal
+          </button>
+        </div>
+      </div>
+
+      {/* Node Selection */}
+      <div className="p-4 border-b border-slate-200">
+        <h4 className="font-semibold text-slate-700 mb-3 text-sm">Node Selection</h4>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-600">Start Node:</span>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-green-600">
+                {algorithmState.startNode || 'None'}
+              </span>
+              <button
+                onClick={() => document.querySelector('.graph-editor').dispatchEvent(new CustomEvent('selectStart'))}
+                className="px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 text-xs rounded transition-colors"
+              >
+                Select
+              </button>
             </div>
           </div>
+          
+          {(algorithmState.selectedAlgorithm === 'dijkstra') && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-600">End Node:</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-red-600">
+                  {algorithmState.endNode || 'None'}
+                </span>
+                <button
+                  onClick={() => document.querySelector('.graph-editor').dispatchEvent(new CustomEvent('selectEnd'))}
+                  className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs rounded transition-colors"
+                >
+                  Select
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {(algorithmState.selectedAlgorithm === 'dfs' || algorithmState.selectedAlgorithm === 'bfs') && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-600">Target (optional):</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-orange-600">
+                  {algorithmState.targetNode || 'None'}
+                </span>
+                <button
+                  onClick={() => document.querySelector('.graph-editor').dispatchEvent(new CustomEvent('selectTarget'))}
+                  className="px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 text-xs rounded transition-colors"
+                >
+                  Select
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Animation Controls */}
+      {algorithmState.result && (
+        <div className="p-4 border-b border-slate-200">
+          <h4 className="font-semibold text-slate-700 mb-3 text-sm">Animation Controls</h4>
+          
+          {/* Progress Bar */}
+          <div className="mb-3">
+            <div className="flex justify-between text-xs text-slate-600 mb-1">
+              <span>Step {Math.max(0, algorithmState.stepIndex + 1)} of {algorithmState.totalSteps}</span>
+              <span>{Math.round(animState.progress * 100)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${animState.progress * 100}%` }}
+              ></div>
+            </div>
+          </div>
+          
+          {/* Playback Controls */}
+          <div className="flex items-center justify-center space-x-2 mb-3">
+            <button
+              onClick={() => animationController?.reset()}
+              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Reset"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+            
+            <button
+              onClick={() => animationController?.stepBackward()}
+              disabled={!animState.canStepBackward}
+              className="p-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded-lg transition-colors"
+              title="Previous Step"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            
+            <button
+              onClick={() => animState.isPlaying ? animationController?.pause() : animationController?.play()}
+              className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+              title={animState.isPlaying ? "Pause" : "Play"}
+            >
+              {animState.isPlaying ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              )}
+            </button>
+            
+            <button
+              onClick={() => animationController?.stepForward()}
+              disabled={!animState.canStepForward}
+              className="p-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded-lg transition-colors"
+              title="Next Step"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Speed Control */}
+          <div className="mb-3">
+            <label className="text-xs text-slate-600 mb-1 block">Animation Speed</label>
+            <select 
+              value={selectedSpeed}
+              onChange={(e) => handleSpeedChange(Number(e.target.value))}
+              className="w-full text-xs border border-gray-200 rounded px-2 py-1"
+            >
+              <option value={2000}>Slow (2s)</option>
+              <option value={1000}>Normal (1s)</option>
+              <option value={500}>Fast (0.5s)</option>
+              <option value={200}>Very Fast (0.2s)</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Display Settings */}
+      <div className="p-4 border-b border-slate-200">
+        <h4 className="font-semibold text-slate-700 mb-3 text-sm">Display Settings</h4>
+        <div className="space-y-3">
+          <label className="flex items-center space-x-3 group cursor-pointer">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={isTreeMode}
+                onChange={(e) => setIsTreeMode(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 ${
+                isTreeMode 
+                  ? 'bg-indigo-500 border-indigo-500' 
+                  : 'border-slate-300 group-hover:border-indigo-400'
+              }`}>
+                {isTreeMode && (
+                  <svg className="w-3 h-3 text-white absolute top-0.5 left-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            <span className="text-sm text-slate-700 font-medium">Tree mode</span>
+          </label>
+          
+          <label className="flex items-center space-x-3 group cursor-pointer">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={showComponents}
+                onChange={(e) => setShowComponents(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 ${
+                showComponents 
+                  ? 'bg-purple-500 border-purple-500' 
+                  : 'border-slate-300 group-hover:border-purple-400'
+              }`}>
+                {showComponents && (
+                  <svg className="w-3 h-3 text-white absolute top-0.5 left-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            <span className="text-sm text-slate-700 font-medium">Show components</span>
+          </label>
+        </div>
+      </div>
+      
+      {/* Reset Button */}
+      <div className="p-4">
+        <button
+          onClick={onResetAlgorithm}
+          className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-medium transition-colors"
+        >
+          Reset Algorithm
+        </button>
       </div>
       
       {/* Info Panel */}
-      <div className="flex-1 p-6">
-        <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 rounded-2xl border border-indigo-200 shadow-sm h-full overflow-auto">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex-1 p-4 overflow-auto">
+        <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 rounded-2xl border border-indigo-200 shadow-sm">
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="w-5 h-5 bg-blue-500 rounded-lg flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h4 className="font-bold text-slate-700">Interactive Guide</h4>
+            <h4 className="font-bold text-slate-700 text-sm">Algorithm Guide</h4>
           </div>
           
-          <div className="space-y-4 text-sm text-slate-600">
-            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
-              <p className="font-medium text-slate-700 mb-2">🎯 Point-and-click</p>
-              <p className="leading-relaxed">
-                Use the interactive visualization tool in the center of the screen. 
-                Click and drag nodes to reposition them as needed.
-              </p>
+          <div className="space-y-3 text-xs text-slate-600">
+            <div className="bg-white/70 backdrop-blur-sm p-3 rounded-xl border border-white/50">
+              <p className="font-medium text-slate-700 mb-1">🎯 Quick Start</p>
+              <ol className="space-y-1 text-xs list-decimal list-inside">
+                <li>Select an algorithm above</li>
+                <li>Choose start/end nodes as needed</li>
+                <li>Click play to see step-by-step animation</li>
+                <li>Use controls to navigate through steps</li>
+              </ol>
             </div>
             
-            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
-              <p className="font-medium text-slate-700 mb-2">✨ Interactive Features</p>
-              <ul className="space-y-2 text-xs">
-                <li className="flex items-start space-x-2">
-                  <span className="text-blue-500 mt-0.5">•</span>
-                  <span>Nodes support smooth drag and drop</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-purple-500 mt-0.5">•</span>
-                  <span>Click nodes to select and highlight them</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-green-500 mt-0.5">•</span>
-                  <span>Zoom and pan for better navigation</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-orange-500 mt-0.5">•</span>
-                  <span>Real-time edge updates during movement</span>
-                </li>
+            <div className="bg-white/70 backdrop-blur-sm p-3 rounded-xl border border-white/50">
+              <p className="font-medium text-slate-700 mb-1">🔍 Algorithm Features</p>
+              <ul className="space-y-1 text-xs">
+                <li><span className="text-blue-500">•</span> <strong>Shortest Path:</strong> Dijkstra's algorithm</li>
+                <li><span className="text-green-500">•</span> <strong>Topological Sort:</strong> For DAGs only</li>
+                <li><span className="text-purple-500">•</span> <strong>DFS:</strong> Depth-first traversal</li>
+                <li><span className="text-indigo-500">•</span> <strong>BFS:</strong> Breadth-first traversal</li>
               </ul>
             </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Action Buttons - Removed for cleaner interface */}
-      <div className="p-6 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-purple-50">
-        <div className="text-center">
-          <div className="text-sm text-slate-600 bg-white/80 p-3 rounded-lg border border-slate-200">
-            <div className="font-semibold text-slate-700 mb-1">🎯 Ready to visualize!</div>
-            <div>Use the controls above to customize your graph display.</div>
           </div>
         </div>
       </div>
