@@ -129,7 +129,7 @@ export const InputPanel = ({
   );
 };
 
-// Graph Editor Component with FIXED Drag Behavior - No More Coordinate Snapping!
+// Graph Editor Component with FIXED Drag Behavior + Tree Mode + Components + Curved Edges
 export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents }) => {
   const svgRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
@@ -178,10 +178,81 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
       return nodeData;
     });
 
-    const links = graphData.edges.map(edge => ({
-      ...edge,
-      weight: edge.weight || null
-    }));
+    // Process edges for curved bidirectional connections
+    const processedLinks = [];
+    const bidirectionalPairs = new Set();
+    
+    graphData.edges.forEach(edge => {
+      const reverseEdge = graphData.edges.find(e => 
+        e.source === edge.target && e.target === edge.source
+      );
+      
+      if (reverseEdge && !bidirectionalPairs.has(`${edge.target}-${edge.source}`)) {
+        // This is a bidirectional connection
+        bidirectionalPairs.add(`${edge.source}-${edge.target}`);
+        
+        // Add original edge (straight)
+        processedLinks.push({
+          ...edge,
+          weight: edge.weight || null,
+          curved: false
+        });
+        
+        // Add reverse edge (curved)
+        processedLinks.push({
+          ...reverseEdge,
+          weight: reverseEdge.weight || null,
+          curved: true
+        });
+      } else if (!bidirectionalPairs.has(`${edge.source}-${edge.target}`) && 
+                 !bidirectionalPairs.has(`${edge.target}-${edge.source}`)) {
+        // Single direction edge
+        processedLinks.push({
+          ...edge,
+          weight: edge.weight || null,
+          curved: false
+        });
+      }
+    });
+
+    // Detect connected components for coloring
+    const components = [];
+    const visited = new Set();
+    
+    if (showComponents) {
+      nodes.forEach(node => {
+        if (!visited.has(node.id)) {
+          const component = [];
+          const stack = [node.id];
+          
+          while (stack.length > 0) {
+            const nodeId = stack.pop();
+            if (!visited.has(nodeId)) {
+              visited.add(nodeId);
+              component.push(nodeId);
+              
+              // Find connected nodes
+              processedLinks.forEach(edge => {
+                if (edge.source === nodeId && !visited.has(edge.target)) {
+                  stack.push(edge.target);
+                }
+                if (!isDirected && edge.target === nodeId && !visited.has(edge.source)) {
+                  stack.push(edge.source);
+                }
+              });
+            }
+          }
+          
+          components.push(component);
+        }
+      });
+    }
+
+    // Component colors
+    const componentColors = [
+      '#e74c3c', '#3498db', '#2ecc71', '#f39c12', 
+      '#9b59b6', '#1abc9c', '#e67e22', '#34495e'
+    ];
 
     // Add arrowhead marker for directed graphs with better styling
     if (isDirected) {
@@ -204,23 +275,24 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
       console.log('Undirected graph - no arrows');
     }
 
-    // Create links
+    // Create links (both straight and curved)
     const linkElements = g.append('g')
       .attr('class', 'links')
-      .selectAll('line')
-      .data(links)
+      .selectAll('path')
+      .data(processedLinks)
       .enter()
-      .append('line')
+      .append('path')
       .attr('stroke', '#999')
       .attr('stroke-width', d => d.weight ? Math.max(1, Math.min(5, d.weight)) : 2)
       .attr('stroke-opacity', 0.8)
+      .attr('fill', 'none')
       .attr('marker-end', isDirected ? 'url(#arrowhead)' : null);
 
     // Create edge weight labels for weighted edges
     const edgeLabels = g.append('g')
       .attr('class', 'edge-labels')
       .selectAll('text')
-      .data(links.filter(d => d.weight !== null && d.weight !== undefined))
+      .data(processedLinks.filter(d => d.weight !== null && d.weight !== undefined))
       .enter()
       .append('text')
       .attr('class', 'edge-weight')
@@ -247,11 +319,22 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
       .attr('class', 'node-group')
       .attr('transform', d => `translate(${d.x},${d.y})`);
 
-    // Node circles
+    // Node circles with component coloring
     nodeGroups.append('circle')
       .attr('r', 20)
-      .attr('fill', d => selectedNode === d.id ? '#4A90E2' : '#fff')
-      .attr('stroke', d => selectedNode === d.id ? '#357abd' : '#666')
+      .attr('fill', d => {
+        if (selectedNode === d.id) return '#4A90E2';
+        if (showComponents) {
+          const componentIndex = components.findIndex(comp => comp.includes(d.id));
+          return componentIndex >= 0 ? componentColors[componentIndex % componentColors.length] : '#fff';
+        }
+        return '#fff';
+      })
+      .attr('stroke', d => {
+        if (selectedNode === d.id) return '#357abd';
+        if (showComponents) return '#fff';
+        return '#666';
+      })
       .attr('stroke-width', d => selectedNode === d.id ? 3 : 2)
       .attr('cursor', 'grab')
       .on('click', (event, d) => {
@@ -266,28 +349,46 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
       .attr('dominant-baseline', 'central')
       .attr('font-size', '14px')
       .attr('font-weight', '600')
-      .attr('fill', d => selectedNode === d.id ? '#fff' : '#333')
+      .attr('fill', d => {
+        if (selectedNode === d.id) return '#fff';
+        if (showComponents) return '#fff';
+        return '#333';
+      })
       .attr('pointer-events', 'none')
       .text(d => d.id);
 
     // Function to update link and label positions
     const updateLinks = () => {
       linkElements
-        .attr('x1', d => {
+        .attr('d', d => {
           const sourceNode = nodes.find(n => n.id === d.source);
-          return sourceNode ? sourceNode.x : 0;
-        })
-        .attr('y1', d => {
-          const sourceNode = nodes.find(n => n.id === d.source);
-          return sourceNode ? sourceNode.y : 0;
-        })
-        .attr('x2', d => {
           const targetNode = nodes.find(n => n.id === d.target);
-          return targetNode ? targetNode.x : 0;
-        })
-        .attr('y2', d => {
-          const targetNode = nodes.find(n => n.id === d.target);
-          return targetNode ? targetNode.y : 0;
+          
+          if (!sourceNode || !targetNode) return '';
+          
+          if (d.curved) {
+            // Create curved path for bidirectional edges
+            const dx = targetNode.x - sourceNode.x;
+            const dy = targetNode.y - sourceNode.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Calculate curve control point
+            const curvature = 0.3;
+            const midX = (sourceNode.x + targetNode.x) / 2;
+            const midY = (sourceNode.y + targetNode.y) / 2;
+            
+            // Perpendicular offset for curve
+            const offsetX = -dy / distance * (distance * curvature);
+            const offsetY = dx / distance * (distance * curvature);
+            
+            const controlX = midX + offsetX;
+            const controlY = midY + offsetY;
+            
+            return `M ${sourceNode.x} ${sourceNode.y} Q ${controlX} ${controlY} ${targetNode.x} ${targetNode.y}`;
+          } else {
+            // Straight line
+            return `M ${sourceNode.x} ${sourceNode.y} L ${targetNode.x} ${targetNode.y}`;
+          }
         });
       
       // Update edge weight labels positions
@@ -296,6 +397,14 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
           const sourceNode = nodes.find(n => n.id === d.source);
           const targetNode = nodes.find(n => n.id === d.target);
           if (sourceNode && targetNode) {
+            if (d.curved) {
+              const dx = targetNode.x - sourceNode.x;
+              const dy = targetNode.y - sourceNode.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              const midX = (sourceNode.x + targetNode.x) / 2;
+              const offsetX = -dy / distance * (distance * 0.2);
+              return midX + offsetX;
+            }
             return (sourceNode.x + targetNode.x) / 2;
           }
           return 0;
@@ -304,30 +413,18 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
           const sourceNode = nodes.find(n => n.id === d.source);
           const targetNode = nodes.find(n => n.id === d.target);
           if (sourceNode && targetNode) {
-            return (sourceNode.y + targetNode.y) / 2 - 5; // Slightly above the edge
+            if (d.curved) {
+              const dx = targetNode.x - sourceNode.x;
+              const dy = targetNode.y - sourceNode.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              const midY = (sourceNode.y + targetNode.y) / 2;
+              const offsetY = dx / distance * (distance * 0.2);
+              return midY + offsetY - 5;
+            }
+            return (sourceNode.y + targetNode.y) / 2 - 5;
           }
           return 0;
         });
-      
-      // Update edge weight labels positions
-      edgeLabels
-        .attr('x', d => {
-          const sourceNode = nodes.find(n => n.id === d.source);
-          const targetNode = nodes.find(n => n.id === d.target);
-          if (sourceNode && targetNode) {
-            return (sourceNode.x + targetNode.x) / 2;
-          }
-          return 0;
-        })
-        .attr('y', d => {
-          const sourceNode = nodes.find(n => n.id === d.source);
-          const targetNode = nodes.find(n => n.id === d.target);
-          if (sourceNode && targetNode) {
-            return (sourceNode.y + targetNode.y) / 2 - 5; // Slightly above the edge
-          }
-          return 0;
-        });
-    };
 
     // FIXED DRAG BEHAVIOR - No coordinate transformation issues!
     const dragBehavior = d3.drag()
