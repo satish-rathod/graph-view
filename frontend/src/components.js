@@ -4,25 +4,38 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-text';
 import 'ace-builds/src-noconflict/theme-textmate';
 
-// Header Component
+// Header Component with improved styling
 export const Header = () => {
   return (
-    <div className="fixed top-0 left-0 right-0 bg-white border-b border-cs-border z-50 h-16">
+    <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 border-b border-indigo-300 z-50 h-16 shadow-lg">
       <div className="flex items-center justify-between px-6 h-full">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-cs-blue rounded flex items-center justify-center">
-              <span className="text-white font-bold text-sm">CS</span>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 shadow-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
             </div>
-            <span className="font-semibold text-lg text-cs-text">CS Academy</span>
+            <div>
+              <span className="font-bold text-xl text-white tracking-tight">Graph View</span>
+              <div className="text-xs text-indigo-100 opacity-90">Interactive Graph Editor</div>
+            </div>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
-          <button className="text-cs-text-light hover:text-cs-text">Help</button>
-          <button className="text-cs-text-light hover:text-cs-text">Clear</button>
-          <button className="text-cs-text-light hover:text-cs-text">Edit</button>
-          <button className="text-cs-text-light hover:text-cs-text">Config</button>
+          <button className="text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium">
+            Help
+          </button>
+          <button className="text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium">
+            Clear
+          </button>
+          <button className="text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium">
+            Edit
+          </button>
+          <button className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium border border-white/30">
+            Export
+          </button>
         </div>
       </div>
     </div>
