@@ -483,7 +483,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
     // Initial link positioning
     updateLinks();
 
-  }, [graphData.edges, graphData.nodes.length, isDirected]); // Removed problematic dependencies
+  }, [graphData.edges, graphData.nodes.length, isDirected, showComponents, isTreeMode]);
 
   // Handle selection changes without full re-render
   useEffect(() => {
