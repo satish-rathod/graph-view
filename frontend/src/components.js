@@ -232,7 +232,10 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
       .attr('stroke', 'white')
       .attr('stroke-width', '3')
       .attr('paint-order', 'stroke')
-      .text(d => d.weight);
+      .text(d => {
+        console.log('Edge weight:', d.weight);
+        return d.weight;
+      });
 
     // Create nodes
     const nodeGroups = g.append('g')
