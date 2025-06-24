@@ -88,11 +88,15 @@ export const InputPanel = ({
   );
 };
 
-// Graph Editor Component with Fixed Drag Behavior
+// Graph Editor Component with FIXED Drag Behavior - No More Coordinate Snapping!
 export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents }) => {
   const svgRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Store node positions locally to prevent React re-render interference
+  const nodePositionsRef = useRef(new Map());
+  const currentTransformRef = useRef(d3.zoomIdentity);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -104,25 +108,34 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
     // Create main group
     const g = svg.append('g');
 
-    // Simple zoom behavior that doesn't interfere with dragging
+    // Store transform reference
+    currentTransformRef.current = d3.zoomIdentity;
+
+    // Zoom behavior with proper filtering
     const zoom = d3.zoom()
       .scaleExtent([0.5, 3])
       .filter(function(event) {
-        // Only allow zoom on empty space, not on nodes
-        return !event.target.closest('.node-group') && !isDragging;
+        return !isDragging && !event.target.closest('.node-group');
       })
       .on('zoom', (event) => {
+        currentTransformRef.current = event.transform;
         g.attr('transform', event.transform);
       });
 
     svg.call(zoom);
 
-    // Prepare nodes with current positions
-    const nodes = graphData.nodes.map(d => ({
-      ...d,
-      x: d.x || width / 2 + (Math.random() - 0.5) * 100,
-      y: d.y || height / 2 + (Math.random() - 0.5) * 100
-    }));
+    // Initialize node positions in local cache
+    const nodes = graphData.nodes.map(d => {
+      const cachedPos = nodePositionsRef.current.get(d.id);
+      const nodeData = {
+        ...d,
+        x: cachedPos?.x || d.x || width / 2 + (Math.random() - 0.5) * 100,
+        y: cachedPos?.y || d.y || height / 2 + (Math.random() - 0.5) * 100
+      };
+      // Update cache
+      nodePositionsRef.current.set(d.id, { x: nodeData.x, y: nodeData.y });
+      return nodeData;
+    });
 
     const links = graphData.edges;
 
@@ -141,7 +154,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
         .attr('fill', '#666');
     }
 
-    // Create links first (so they appear behind nodes)
+    // Create links
     const linkElements = g.append('g')
       .attr('class', 'links')
       .selectAll('line')
@@ -207,59 +220,53 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
         });
     };
 
-    // Simple drag behavior without coordinate transformation issues
+    // FIXED DRAG BEHAVIOR - No coordinate transformation issues!
     const dragBehavior = d3.drag()
       .on('start', function(event, d) {
         setIsDragging(true);
         setSelectedNode(d.id);
-        
-        // Get the current transform to calculate correct starting position
-        const currentTransform = d3.zoomTransform(g.node());
-        
-        // Store the offset between mouse and node center
-        const [mouseX, mouseY] = d3.pointer(event, g.node());
-        d.__offsetX = mouseX - d.x;
-        d.__offsetY = mouseY - d.y;
         
         // Visual feedback
         d3.select(this).select('circle')
           .attr('cursor', 'grabbing')
           .attr('stroke-width', 4)
           .attr('stroke', '#4A90E2')
-          .style('filter', 'drop-shadow(3px 3px 6px rgba(0,0,0,0.3))');
+          .attr('r', 24)
+          .style('filter', 'drop-shadow(3px 3px 8px rgba(0,0,0,0.4))');
       })
       .on('drag', function(event, d) {
-        // Get mouse position relative to the group (accounts for zoom/pan)
-        const [mouseX, mouseY] = d3.pointer(event, g.node());
+        // Get mouse position in SVG coordinates (no transform)
+        const [mouseX, mouseY] = d3.pointer(event, svg.node());
         
-        // Calculate new position
-        const newX = mouseX - d.__offsetX;
-        const newY = mouseY - d.__offsetY;
+        // Convert to group coordinates accounting for current transform
+        const transform = currentTransformRef.current;
+        const newX = (mouseX - transform.x) / transform.k;
+        const newY = (mouseY - transform.y) / transform.k;
         
-        // Update node position
+        // Update node position immediately
         d.x = newX;
         d.y = newY;
         
-        // Move the visual element immediately
+        // Update visual position without re-render
         d3.select(this).attr('transform', `translate(${newX},${newY})`);
         
-        // Update connected edges
+        // Update cache
+        nodePositionsRef.current.set(d.id, { x: newX, y: newY });
+        
+        // Update connected edges in real-time
         updateLinks();
       })
       .on('end', function(event, d) {
         setIsDragging(false);
         
-        // Clean up offset
-        delete d.__offsetX;
-        delete d.__offsetY;
-        
-        // Update parent component with final position
+        // Final position update to React state (only once at the end)
         onNodeMove(d.id, d.x, d.y);
         
         // Reset visual feedback
         d3.select(this).select('circle')
           .attr('cursor', 'grab')
           .attr('stroke-width', selectedNode === d.id ? 3 : 2)
+          .attr('r', 20)
           .style('filter', 'drop-shadow(2px 2px 4px rgba(0,0,0,0.1))');
       });
 
@@ -268,7 +275,31 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
     // Initial link positioning
     updateLinks();
 
-  }, [graphData, isDirected, selectedNode, onNodeMove, isDragging]);
+  }, [graphData.edges, graphData.nodes.length, isDirected]); // Removed problematic dependencies
+
+  // Handle selection changes without full re-render
+  useEffect(() => {
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('.node-group circle')
+      .attr('fill', function() {
+        const d = d3.select(this.parentNode).datum();
+        return selectedNode === d.id ? '#4A90E2' : '#fff';
+      })
+      .attr('stroke', function() {
+        const d = d3.select(this.parentNode).datum();
+        return selectedNode === d.id ? '#357abd' : '#666';
+      })
+      .attr('stroke-width', function() {
+        const d = d3.select(this.parentNode).datum();
+        return selectedNode === d.id ? 3 : 2;
+      });
+
+    svg.selectAll('.node-group text')
+      .attr('fill', function() {
+        const d = d3.select(this.parentNode).datum();
+        return selectedNode === d.id ? '#fff' : '#333';
+      });
+  }, [selectedNode]);
 
   return (
     <div className="w-full h-full relative">
@@ -281,7 +312,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
       />
       
       <div className="absolute top-4 right-4 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow">
-        {isDragging ? 'Dragging...' : 'Click and drag nodes'}
+        {isDragging ? '🎯 Dragging node...' : '✨ Drag nodes freely'}
       </div>
     </div>
   );
