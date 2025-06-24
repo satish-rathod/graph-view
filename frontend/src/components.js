@@ -650,6 +650,7 @@ export const ControlPanel = ({
   algorithmState,
   onExecuteAlgorithm,
   onResetAlgorithm,
+  onStartNodeSelection,
   animationController,
   graphData,
   isDirected
