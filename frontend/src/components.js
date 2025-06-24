@@ -302,6 +302,25 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
           }
           return 0;
         });
+      
+      // Update edge weight labels positions
+      edgeLabels
+        .attr('x', d => {
+          const sourceNode = nodes.find(n => n.id === d.source);
+          const targetNode = nodes.find(n => n.id === d.target);
+          if (sourceNode && targetNode) {
+            return (sourceNode.x + targetNode.x) / 2;
+          }
+          return 0;
+        })
+        .attr('y', d => {
+          const sourceNode = nodes.find(n => n.id === d.source);
+          const targetNode = nodes.find(n => n.id === d.target);
+          if (sourceNode && targetNode) {
+            return (sourceNode.y + targetNode.y) / 2 - 5; // Slightly above the edge
+          }
+          return 0;
+        });
     };
 
     // FIXED DRAG BEHAVIOR - No coordinate transformation issues!
