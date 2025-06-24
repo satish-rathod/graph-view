@@ -91,7 +91,7 @@ export const InputPanel = ({
           {/* Code Editor */}
           <AceEditor
             mode="text"
-            theme="monokai"
+            theme="github"
             value={inputText}
             onChange={setInputText}
             name="graph-input"
