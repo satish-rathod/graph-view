@@ -253,12 +253,12 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-cs-gray">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-purple-50">
       <Header />
       
       <div className="flex h-screen pt-16">
         {/* Left Panel - Input */}
-        <div className="w-80 bg-white border-r border-cs-border flex flex-col">
+        <div className="w-80 shadow-xl">
           <InputPanel 
             inputText={inputText}
             setInputText={setInputText}
