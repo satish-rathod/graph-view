@@ -319,11 +319,12 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
       .attr('class', 'node-group')
       .attr('transform', d => `translate(${d.x},${d.y})`);
 
-    // Node circles with component coloring
+    // Node circles with component coloring and tree mode styling
     nodeGroups.append('circle')
       .attr('r', 20)
       .attr('fill', d => {
         if (selectedNode === d.id) return '#4A90E2';
+        if (isTreeMode) return '#27ae60'; // Green for tree mode
         if (showComponents) {
           const componentIndex = components.findIndex(comp => comp.includes(d.id));
           return componentIndex >= 0 ? componentColors[componentIndex % componentColors.length] : '#fff';
@@ -332,6 +333,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents,
       })
       .attr('stroke', d => {
         if (selectedNode === d.id) return '#357abd';
+        if (isTreeMode) return '#1e8449'; // Darker green for tree mode
         if (showComponents) return '#fff';
         return '#666';
       })
