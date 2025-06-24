@@ -737,7 +737,7 @@ export const ControlPanel = ({
                 {algorithmState.startNode || 'None'}
               </span>
               <button
-                onClick={() => document.querySelector('.graph-editor').dispatchEvent(new CustomEvent('selectStart'))}
+                onClick={() => onStartNodeSelection('startNode')}
                 className="px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 text-xs rounded transition-colors"
               >
                 Select
