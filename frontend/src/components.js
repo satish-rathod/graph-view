@@ -697,28 +697,28 @@ export const ControlPanel = ({
         <h4 className="font-semibold text-slate-700 mb-3 text-sm">Graph Algorithms</h4>
         <div className="grid grid-cols-2 gap-2">
           <button
-            onClick={() => onExecuteAlgorithm('dijkstra')}
+            onClick={() => onSelectAlgorithm('dijkstra')}
             disabled={algorithmState.isRunning}
             className="px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-xs rounded-lg font-medium transition-colors"
           >
             Shortest Path
           </button>
           <button
-            onClick={() => onExecuteAlgorithm('topological')}
+            onClick={() => onSelectAlgorithm('topological')}
             disabled={algorithmState.isRunning || !isDirected}
             className="px-3 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white text-xs rounded-lg font-medium transition-colors"
           >
             Topological Sort
           </button>
           <button
-            onClick={() => onExecuteAlgorithm('dfs')}
+            onClick={() => onSelectAlgorithm('dfs')}
             disabled={algorithmState.isRunning}
             className="px-3 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white text-xs rounded-lg font-medium transition-colors"
           >
             DFS Traversal
           </button>
           <button
-            onClick={() => onExecuteAlgorithm('bfs')}
+            onClick={() => onSelectAlgorithm('bfs')}
             disabled={algorithmState.isRunning}
             className="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-300 text-white text-xs rounded-lg font-medium transition-colors"
           >
