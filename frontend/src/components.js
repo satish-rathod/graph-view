@@ -648,6 +648,7 @@ export const ControlPanel = ({
   isTreeMode, 
   setIsTreeMode,
   algorithmState,
+  onSelectAlgorithm,
   onExecuteAlgorithm,
   onResetAlgorithm,
   onStartNodeSelection,
