@@ -264,19 +264,6 @@ function App() {
     };
   }, []);
 
-  // Clear input functionality
-  const clearInput = () => {
-    setInputText('');
-  };
-
-  // Expose clear function globally for header button
-  useEffect(() => {
-    window.clearGraphInput = clearInput;
-    return () => {
-      delete window.clearGraphInput;
-    };
-  }, []);
-
   const updateNodePosition = (nodeId, x, y) => {
     setGraphData(prev => ({
       ...prev,
