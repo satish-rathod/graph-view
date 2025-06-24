@@ -392,9 +392,8 @@ export const GraphEditor = ({
         event.stopPropagation();
         
         // Handle algorithm node selection
-        if (selectionMode) {
-          onNodeSelect(d.id, selectionMode);
-          setSelectionMode(null);
+        if (algorithmState.selectionMode) {
+          onNodeSelect(d.id);
           return;
         }
         
