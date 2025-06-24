@@ -148,10 +148,15 @@ function App() {
 
   // Start node selection mode
   const startNodeSelection = (mode) => {
-    setAlgorithmState(prev => ({
-      ...prev,
-      selectionMode: mode
-    }));
+    console.log('Starting node selection mode:', mode);
+    setAlgorithmState(prev => {
+      const newState = {
+        ...prev,
+        selectionMode: mode
+      };
+      console.log('Updated algorithm state with selection mode:', newState);
+      return newState;
+    });
   };
 
   // Algorithm selection and execution functions
