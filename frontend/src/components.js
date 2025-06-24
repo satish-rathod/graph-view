@@ -140,7 +140,6 @@ export const GraphEditor = ({
   const svgRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [selectionMode, setSelectionMode] = useState(null); // 'start', 'end', 'target'
   
   // Store node positions locally to prevent React re-render interference
   const nodePositionsRef = useRef(new Map());
