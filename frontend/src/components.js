@@ -221,70 +221,61 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
       .attr('fill', d => selectedNode === d.id ? '#fff' : '#333')
       .attr('pointer-events', 'none');
 
-    // Enhanced drag behavior with proper coordinate handling
+    // Fixed drag behavior - no more coordinate snapping
     const dragBehavior = d3.drag()
       .on('start', function(event, d) {
         if (!event.active) simulation.alphaTarget(0.3).restart();
         
-        // Store the initial position relative to the node
-        const [mouseX, mouseY] = d3.pointer(event, svg.node());
-        const transform = d3.zoomTransform(svg.node());
-        const [worldX, worldY] = transform.invert([mouseX, mouseY]);
-        
+        // Fix the node position at the start of drag
         d.fx = d.x;
         d.fy = d.y;
-        
-        // Store offset for smooth dragging
-        d.__dragOffsetX = worldX - d.x;
-        d.__dragOffsetY = worldY - d.y;
         
         setSelectedNode(d.id);
         setIsSimulationRunning(true);
         
         // Visual feedback
         d3.select(this).select('circle')
+          .transition()
+          .duration(100)
           .attr('stroke-width', 4)
           .attr('stroke', '#4A90E2')
           .attr('r', 25);
       })
       .on('drag', function(event, d) {
-        // Get mouse position relative to SVG
-        const [mouseX, mouseY] = d3.pointer(event, svg.node());
-        const transform = d3.zoomTransform(svg.node());
-        const [worldX, worldY] = transform.invert([mouseX, mouseY]);
+        // Use event.x and event.y directly - they're already in the correct coordinate system
+        d.fx = event.x;
+        d.fy = event.y;
         
-        // Apply the drag offset to maintain smooth movement
-        d.fx = worldX - d.__dragOffsetX;
-        d.fy = worldY - d.__dragOffsetY;
-        
-        // Restart simulation with low alpha to update immediately
-        simulation.alpha(0.1).restart();
+        // Force immediate update without full simulation restart
+        simulation.tick();
       })
       .on('end', function(event, d) {
         if (!event.active) simulation.alphaTarget(0.1);
         
-        // Clean up
-        delete d.__dragOffsetX;
-        delete d.__dragOffsetY;
+        // Keep the final position but allow simulation to continue
+        const finalX = d.fx;
+        const finalY = d.fy;
         
-        // Release fixed position but keep current position
-        const finalX = d.x;
-        const finalY = d.y;
+        // Release the fixed constraint
         d.fx = null;
         d.fy = null;
         
+        // But immediately set the actual position to where we dragged
+        d.x = finalX;
+        d.y = finalY;
+        
         setIsSimulationRunning(false);
         
-        // Update parent component with new position
+        // Update parent component
         onNodeMove(d.id, finalX, finalY);
         
         // Reset visual feedback
-        if (selectedNode !== d.id) {
-          d3.select(this).select('circle')
-            .attr('stroke-width', 2)
-            .attr('stroke', '#666')
-            .attr('r', 22);
-        }
+        d3.select(this).select('circle')
+          .transition()
+          .duration(200)
+          .attr('stroke-width', selectedNode === d.id ? 3 : 2)
+          .attr('stroke', selectedNode === d.id ? '#357abd' : '#666')
+          .attr('r', 22);
       });
 
     node.call(dragBehavior);
