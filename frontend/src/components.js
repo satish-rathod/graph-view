@@ -612,13 +612,13 @@ export const GraphEditor = ({
       />
       
       {/* Selection Mode Indicator */}
-      {selectionMode && (
+      {algorithmState.selectionMode && (
         <div className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-2 rounded-lg shadow-lg">
           <div className="text-sm font-medium">
-            Click a node to select as {selectionMode.toUpperCase()}
+            Click a node to select as {algorithmState.selectionMode.toUpperCase().replace('NODE', '')}
           </div>
           <button 
-            onClick={() => setSelectionMode(null)}
+            onClick={() => onNodeSelect(null)}
             className="ml-2 text-blue-200 hover:text-white"
           >
             ✕
