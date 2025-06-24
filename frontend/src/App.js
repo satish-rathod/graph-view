@@ -145,7 +145,15 @@ function App() {
     }));
   };
 
-  // Algorithm execution functions
+  // Algorithm selection and execution functions
+  const selectAlgorithm = (algorithm) => {
+    setAlgorithmState(prev => ({
+      ...prev,
+      selectedAlgorithm: algorithm,
+      message: `${algorithm.toUpperCase()} algorithm selected. Please select required nodes.`
+    }));
+  };
+
   const executeAlgorithm = (algorithm) => {
     const { nodes, edges } = graphData;
     
@@ -197,7 +205,6 @@ function App() {
     
     setAlgorithmState(prev => ({
       ...prev,
-      selectedAlgorithm: algorithm,
       isRunning: false,
       result: result,
       stepIndex: -1,
