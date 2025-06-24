@@ -929,6 +929,19 @@ export const ControlPanel = ({
         >
           Reset Algorithm
         </button>
+        
+        {/* Execute Button */}
+        {algorithmState.selectedAlgorithm && (
+          <div className="mt-3">
+            <button
+              onClick={() => onExecuteAlgorithm(algorithmState.selectedAlgorithm)}
+              disabled={algorithmState.isRunning}
+              className="w-full px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:bg-gray-300 text-white text-sm rounded-lg font-medium transition-all duration-200 shadow-lg"
+            >
+              🚀 Execute {algorithmState.selectedAlgorithm.toUpperCase()}
+            </button>
+          </div>
+        )}
       </div>
       
       {/* Info Panel */}
