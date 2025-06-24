@@ -185,20 +185,23 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
 
     // Add arrowhead marker for directed graphs with better styling
     if (isDirected) {
+      console.log('Creating arrowhead markers for directed graph');
       const defs = svg.append('defs');
       
       defs.append('marker')
         .attr('id', 'arrowhead')
         .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 18) // Adjusted to be closer to node edge
+        .attr('refX', 15) // Position closer to node
         .attr('refY', 0)
         .attr('orient', 'auto')
-        .attr('markerWidth', 8)
-        .attr('markerHeight', 8)
+        .attr('markerWidth', 10)
+        .attr('markerHeight', 10)
         .append('svg:path')
         .attr('d', 'M0,-5L10,0L0,5')
         .attr('fill', '#666')
         .attr('stroke', 'none');
+    } else {
+      console.log('Undirected graph - no arrows');
     }
 
     // Create links
