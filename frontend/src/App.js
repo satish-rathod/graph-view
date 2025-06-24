@@ -251,6 +251,19 @@ function App() {
     return newNodes.map(node => ({ id: node.id, x: node.x, y: node.y }));
   };
 
+  // Clear input functionality
+  const clearInput = () => {
+    setInputText('');
+  };
+
+  // Expose clear function globally for header button
+  useEffect(() => {
+    window.clearGraphInput = clearInput;
+    return () => {
+      delete window.clearGraphInput;
+    };
+  }, []);
+
   const updateNodePosition = (nodeId, x, y) => {
     setGraphData(prev => ({
       ...prev,
