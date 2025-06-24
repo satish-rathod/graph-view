@@ -41,7 +41,15 @@ function App() {
 
     lines.forEach(line => {
       const parts = line.trim().split(/\s+/);
-      if (parts.length >= 2) {
+      
+      if (parts.length === 1) {
+        // Single node entry (like "100")
+        const nodeId = parseInt(parts[0]);
+        if (!isNaN(nodeId)) {
+          nodeSet.add(nodeId);
+        }
+      } else if (parts.length >= 2) {
+        // Edge entry (like "1 2" or "1 2 5.5")
         const source = parseInt(parts[0]);
         const target = parseInt(parts[1]);
         const weight = parts.length > 2 ? parseFloat(parts[2]) : null;
