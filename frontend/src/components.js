@@ -359,7 +359,7 @@ export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents 
   );
 };
 
-// Control Panel Component
+// Control Panel Component with enhanced styling
 export const ControlPanel = ({ 
   generateLayout, 
   showComponents, 
@@ -368,65 +368,139 @@ export const ControlPanel = ({
   setIsTreeMode 
 }) => {
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-cs-border">
-        <h3 className="font-semibold text-cs-text mb-4">Graph Options</h3>
+    <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white border-l border-slate-200 shadow-sm">
+      {/* Header Section */}
+      <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        <div className="flex items-center space-x-2 mb-3">
+          <div className="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+            </svg>
+          </div>
+          <h3 className="font-bold text-slate-700 text-lg">Graph Options</h3>
+        </div>
         
-        <div className="space-y-3">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={isTreeMode}
-              onChange={(e) => setIsTreeMode(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <span className="text-sm text-cs-text">Tree mode</span>
-          </label>
+        <div className="space-y-4">
+          <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200 shadow-sm">
+            <h4 className="font-semibold text-slate-700 mb-3 text-sm">Display Settings</h4>
+            <div className="space-y-3">
+              <label className="flex items-center space-x-3 group cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isTreeMode}
+                    onChange={(e) => setIsTreeMode(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 ${
+                    isTreeMode 
+                      ? 'bg-indigo-500 border-indigo-500' 
+                      : 'border-slate-300 group-hover:border-indigo-400'
+                  }`}>
+                    {isTreeMode && (
+                      <svg className="w-3 h-3 text-white absolute top-0.5 left-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span className="text-sm text-slate-700 font-medium">Tree mode</span>
+              </label>
+              
+              <label className="flex items-center space-x-3 group cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={showComponents}
+                    onChange={(e) => setShowComponents(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 ${
+                    showComponents 
+                      ? 'bg-purple-500 border-purple-500' 
+                      : 'border-slate-300 group-hover:border-purple-400'
+                  }`}>
+                    {showComponents && (
+                      <svg className="w-3 h-3 text-white absolute top-0.5 left-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span className="text-sm text-slate-700 font-medium">Show components</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Info Panel */}
+      <div className="flex-1 p-6">
+        <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 rounded-2xl border border-indigo-200 shadow-sm h-full overflow-auto">
+          <div className="flex items-center space-x-2 mb-4">
+            <div className="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h4 className="font-bold text-slate-700">Interactive Guide</h4>
+          </div>
           
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={showComponents}
-              onChange={(e) => setShowComponents(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <span className="text-sm text-cs-text">Show components</span>
-          </label>
+          <div className="space-y-4 text-sm text-slate-600">
+            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
+              <p className="font-medium text-slate-700 mb-2">🎯 Point-and-click</p>
+              <p className="leading-relaxed">
+                Use the interactive visualization tool in the center of the screen. 
+                Click and drag nodes to reposition them as needed.
+              </p>
+            </div>
+            
+            <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-white/50">
+              <p className="font-medium text-slate-700 mb-2">✨ Interactive Features</p>
+              <ul className="space-y-2 text-xs">
+                <li className="flex items-start space-x-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span>Nodes support smooth drag and drop</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <span className="text-purple-500 mt-0.5">•</span>
+                  <span>Click nodes to select and highlight them</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <span className="text-green-500 mt-0.5">•</span>
+                  <span>Zoom and pan for better navigation</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <span className="text-orange-500 mt-0.5">•</span>
+                  <span>Real-time edge updates during movement</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
       
-      <div className="flex-1 p-4">
-        <div className="bg-cs-light-blue p-4 rounded-lg text-sm text-cs-text-light">
-          <h4 className="font-semibold text-cs-text mb-2">Point-and-click</h4>
-          <p className="mb-3">
-            In this mode, there is a visualization tool that works in the center of
-            the screen. You can click nodes and drag them as needed.
-          </p>
-          <p className="mb-3">
-            As you edit the graph with these edges, the right panel will become
-            the left panel and become.
-          </p>
-          <ul className="list-disc pl-4 space-y-1">
-            <li>Nodes support drag and drop</li>
-            <li>All the start of the drag, the node becomes selected</li>
-            <li>You can double-click nodes by dragging click</li>
-          </ul>
-        </div>
-      </div>
-      
-      <div className="p-4 border-t border-cs-border">
-        <div className="flex flex-col space-y-2">
+      {/* Action Buttons */}
+      <div className="p-6 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-purple-50">
+        <div className="space-y-3">
           <button
             onClick={generateLayout}
-            className="w-full bg-cs-blue text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
           >
-            Generate Layout
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>Generate Layout</span>
           </button>
+          
           <button
             onClick={generateLayout}
-            className="w-full bg-cs-blue text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
           >
-            Generate Layout
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>Smart Layout</span>
           </button>
         </div>
       </div>
