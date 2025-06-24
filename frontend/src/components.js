@@ -130,7 +130,7 @@ export const InputPanel = ({
 };
 
 // Graph Editor Component with FIXED Drag Behavior + Tree Mode + Components + Curved Edges
-export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents }) => {
+export const GraphEditor = ({ graphData, isDirected, onNodeMove, showComponents, isTreeMode }) => {
   const svgRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
