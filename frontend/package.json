@@ -1,5 +1,5 @@
 {
-  "name": "cs-academy-graph-editor-replica",
+  "name": "Graph-View",
   "version": "1.0.0",
   "private": true,
   "dependencies": {
